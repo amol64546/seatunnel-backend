@@ -65,8 +65,7 @@ public class ETLJobStatus implements Serializable {
 
   private String errorMsg;
 
-  private JsonObject metrics;
-
+  private Map<String, Object> metrics;
 
   @Override
   public String toString() {

@@ -16,7 +16,7 @@ import reactor.core.publisher.Flux;
 import java.util.Map;
 
 @RestController
-@RequestMapping("")
+@RequestMapping("/jobs")
 @RequiredArgsConstructor
 @Slf4j
 public class JobController {
