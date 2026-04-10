@@ -12,9 +12,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -97,4 +101,9 @@ public class PipelineController {
     etlJobService.callback(event);
   }
 
+
+  @GetMapping(value = "/jobs/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public Flux<String> streamJobStatus(@PathVariable String id) {
+    return etlJobService.streamJobStatus(id);
+  }
 }

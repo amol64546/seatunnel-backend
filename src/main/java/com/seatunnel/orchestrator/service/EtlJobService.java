@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.seatunnel.orchestrator.config.OrchestrationProperties;
 import com.seatunnel.orchestrator.enums.JobMode;
 import com.seatunnel.orchestrator.enums.JobStatus;
+import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
 import com.seatunnel.orchestrator.model.ETLJobOverview;
 import com.seatunnel.orchestrator.model.ETLJobStatus;
@@ -20,12 +21,19 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.seatunnel.orchestrator.util.Constants.*;
 
@@ -40,6 +48,16 @@ public class EtlJobService {
   private final CommonUtil commonUtil;
   private final EtlJobStatusRepo etlJobStatusRepo;
   private final EtlPipelineService etlPipelineService;
+  private final WebClient webClient;
+  private final static Set<String> CDC_SOURCE_PLUGINS = Set.of(
+    SourcePlugin.KAFKA.getValue(),
+    SourcePlugin.MYSQL_CDC.getValue(),
+    SourcePlugin.POSTGRESQL_CDC.getValue(),
+    SourcePlugin.TIDB_CDC.getValue(),
+    SourcePlugin.MONGODB_CDC.getValue(),
+    SourcePlugin.ORACLE_CDC.getValue(),
+    SourcePlugin.SQLSERVER_CDC.getValue()
+  );
 
 
   public ETLJobStatus executePipeline(String id, String jobId, Map<String, Object> env) {
@@ -74,6 +92,24 @@ public class EtlJobService {
     EtlPipelineInstance instance = etlPipelineInstanceRepo.getEtlPipelineInstanceByPipelineId(id)
       .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
         "Etl pipeline instance not found for id: %s".formatted(id)));
+
+    instance.getSources().stream()
+      .map(source -> (String) source.get("plugin_name"))
+      .filter(StringUtils::isNotBlank)
+      .filter(pluginName -> !pluginName.equalsIgnoreCase(SourcePlugin.FAKESOURCE.getValue()))
+      .forEach(pluginName -> {
+        if (jobMode.equalsIgnoreCase(JobMode.STREAMING.getValue()) &&
+          !CDC_SOURCE_PLUGINS.contains(pluginName)) {
+          throw new ApiException(HttpStatus.BAD_REQUEST,
+            "For streaming job, source plugin must be one of %s".formatted(CDC_SOURCE_PLUGINS));
+        }
+        if (jobMode.equalsIgnoreCase(JobMode.BATCH.getValue()) &&
+          CDC_SOURCE_PLUGINS.contains(pluginName)) {
+          throw new ApiException(HttpStatus.BAD_REQUEST,
+            "For batch job, source plugin can not be one of %s".formatted(CDC_SOURCE_PLUGINS));
+        }
+      });
+
     instance.setEnv(env);
 
     UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder
@@ -241,7 +277,7 @@ public class EtlJobService {
 
   }
 
-  public static String getJobId(JsonNode event) {
+  private static String getJobId(JsonNode event) {
     // Access the first element in the array
     JsonNode firstElement = event.get(0);
     // Extract the jobId from the first element
@@ -251,5 +287,23 @@ public class EtlJobService {
       return null;
     }
 
+  }
+
+  public Flux<String> streamJobStatus(String jobId) {
+    validateJobExists(jobId);
+    return Flux.interval(Duration.ofSeconds(2))
+      .flatMap(tick -> pollStatus(jobId))
+      .distinctUntilChanged() // Only send if status actually changes
+      .takeUntil(status -> List.of("FINISHED", "CANCELED", "FAILED").contains(status));
+  }
+
+  public Mono<String> pollStatus(String jobId) {
+    return webClient.get()
+      .uri(properties.getEtlServiceUrl() + "/job-info/{id}", jobId)
+      .accept(MediaType.APPLICATION_JSON)
+      .retrieve()
+      .bodyToMono(JsonNode.class)
+      .map(json -> json.path("jobStatus").asText())
+      .onErrorResume(e -> Mono.just("ERROR")); // Handle downstream failures gracefully
   }
 }
