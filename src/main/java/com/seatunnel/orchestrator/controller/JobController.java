@@ -1,8 +1,6 @@
 package com.seatunnel.orchestrator.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.seatunnel.orchestrator.enums.JobStatus;
-import com.seatunnel.orchestrator.model.ETLJobOverview;
 import com.seatunnel.orchestrator.model.ETLJobStatus;
 import com.seatunnel.orchestrator.service.EtlJobService;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -26,16 +24,6 @@ public class JobController {
   @GetMapping(value = "/{jobId}", produces = {"application/json"})
   public ResponseEntity<ETLJobStatus> getJobsById(@PathVariable String jobId) {
     return ResponseEntity.ok().body(etlJobService.getJobsById(jobId));
-  }
-
-  @GetMapping(produces = {"application/json"})
-  public ResponseEntity<Object> getJobsByStatus(@RequestParam JobStatus status) {
-    return ResponseEntity.ok().body(etlJobService.getJobsByStatus(status));
-  }
-
-  @GetMapping(value = "/overview", produces = {"application/json"})
-  public ResponseEntity<ETLJobOverview> getJobsOverview() {
-    return ResponseEntity.ok().body(etlJobService.getJobsOverview());
   }
 
   @PostMapping(value = "/stop/{jobId}", produces = {"application/json"})

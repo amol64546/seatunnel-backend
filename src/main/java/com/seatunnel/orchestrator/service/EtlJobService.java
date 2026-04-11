@@ -8,7 +8,6 @@ import com.seatunnel.orchestrator.enums.JobMode;
 import com.seatunnel.orchestrator.enums.JobStatus;
 import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
-import com.seatunnel.orchestrator.model.ETLJobOverview;
 import com.seatunnel.orchestrator.model.ETLJobStatus;
 import com.seatunnel.orchestrator.model.EtlPipelineInstance;
 import com.seatunnel.orchestrator.projection.EtlPipelineProjection;
@@ -150,19 +149,7 @@ public class EtlJobService {
     if (!etlJobStatus.getJobStatus().equals(JobStatus.SUBMITTED)) {
       return etlJobStatus;
     }
-
-    JsonNode response = commonUtil.restClient(
-      null,
-      HttpMethod.GET,
-      properties.getEtlServiceUrl() + "/job-info/" + jobId,
-      null);
-
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    ETLJobStatus etlJobStatusResponse = objectMapper.convertValue(response, ETLJobStatus.class);
-    etlJobStatusResponse.setPipelineId(etlJobStatus.getPipelineId());
-    etlJobStatusResponse.setCompletionTimeSec(etlJobStatus.getCompletionTimeSec());
-    etlJobStatusResponse.setId(etlJobStatus.getId());
-    return etlJobStatusRepo.save(etlJobStatusResponse);
+    return etlJobStatus;
   }
 
   private ETLJobStatus validateJobExists(String jobId) {
@@ -180,7 +167,7 @@ public class EtlJobService {
 
     if (!etlJobStatus.getJobStatus().equals(JobStatus.RUNNING)) {
       throw new ApiException(HttpStatus.BAD_REQUEST,
-        "Job with id:%s is not running, can not stop with savepoint".formatted(jobId));
+        "Job with id:%s is not running, can not stop".formatted(jobId));
     }
 
     Map<String, Object> requestBody = Map.of(
@@ -199,39 +186,6 @@ public class EtlJobService {
     etlJobStatusRepo.save(etlJobStatus);
 
     return Map.of("msg", String.format("Job cancelled with jobId : %s", jobId));
-  }
-
-  public ETLJobOverview getJobsOverview() {
-    log.info("Fetching ETL overview information");
-    JsonNode response = commonUtil.restClient(
-      null,
-      HttpMethod.GET,
-      properties.getEtlServiceUrl() + "/overview",
-      null);
-
-    return objectMapper.convertValue(
-      response,
-      ETLJobOverview.class
-    );
-  }
-
-  public Object getJobsByStatus(JobStatus status) {
-    log.info("Fetching ETL jobs with status: {}", status);
-
-    String url = properties.getEtlServiceUrl();
-    if (ObjectUtils.isEmpty(status)) {
-      url += "/finished-jobs";
-    } else if (status.equals(JobStatus.RUNNING)) {
-      url += "/running-jobs";
-    } else {
-      url += "/finished-jobs/" + status;
-    }
-    log.info("Constructed URL for fetching ETL jobs: {}", url);
-    return commonUtil.restClient(
-      null,
-      HttpMethod.GET,
-      url,
-      null);
   }
 
 

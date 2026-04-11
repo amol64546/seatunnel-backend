@@ -25,10 +25,6 @@ import java.util.Date;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public abstract class BaseEntity implements Serializable {
 
-  @Id
-  @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-  private String id;
-
   @NotBlank(message = "name can not be blank.")
   private String name;
 

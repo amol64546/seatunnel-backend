@@ -19,6 +19,8 @@ public class EtlBrickReadingConverter implements Converter<Document, EtlBrick> {
 
     brick.setId(source.get("_id").toString());
     brick.setName(source.getString("name"));
+    brick.setCreatedOn(source.getDate("createdOn"));
+    brick.setUpdatedOn(source.getDate("updatedOn"));
     brick.setPluginType(PluginType.valueOf(source.getString("pluginType").toUpperCase()));
 
     // Convert config: hash -> dot

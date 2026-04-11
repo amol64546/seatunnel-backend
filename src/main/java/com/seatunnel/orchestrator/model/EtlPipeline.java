@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.LinkedHashSet;
@@ -20,6 +21,9 @@ import java.util.Set;
 @Setter
 @Document("etl_pipeline")
 public class EtlPipeline extends BaseEntity {
+
+  @Id
+  private String id;
 
   @NotEmpty(message = "nodes can not be empty")
   @Valid

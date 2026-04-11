@@ -6,6 +6,7 @@ import com.seatunnel.orchestrator.repository.EtlBrickRepository;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -43,9 +44,9 @@ public class EtlBrickService {
 
   public EtlBrick update(String id, EtlBrick brick) {
     EtlBrick existingBrick = getById(id);
-    brick.setId(existingBrick.getId());
+    brick.setId(id);
     brick.setCreatedOn(existingBrick.getCreatedOn());
-    return repository.save(brick);
+    return create(brick);
   }
 
   public String delete(String id) {

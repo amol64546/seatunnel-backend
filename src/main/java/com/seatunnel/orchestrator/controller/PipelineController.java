@@ -41,13 +41,6 @@ public class PipelineController {
     return ResponseEntity.ok(service.getAll(pageable));
   }
 
-  @PutMapping("/{id}")
-  public ResponseEntity<?> put(
-    @PathVariable String id,
-    @RequestBody EtlPipeline request) {
-    return ResponseEntity.ok(service.update(id, request));
-  }
-
   @DeleteMapping("/{id}")
   public ResponseEntity<?> delete(
     @PathVariable String id) {

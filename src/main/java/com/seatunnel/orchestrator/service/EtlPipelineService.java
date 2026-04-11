@@ -10,6 +10,7 @@ import com.seatunnel.orchestrator.repository.EtlPipelineRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,11 @@ public class EtlPipelineService {
 
   @PipelineValidation
   public EtlPipeline create(EtlPipeline pipeline) {
+
+    if (StringUtils.isNotBlank(pipeline.getId())) {
+      EtlPipelineProjection etlPipeline = getEtlPipelineProjection(pipeline.getId());
+      pipeline.setCreatedOn(etlPipeline.getCreatedOn());
+    }
 
     EtlPipelineInstance etlPipelineInstance = new EtlPipelineInstance();
 
@@ -149,13 +155,6 @@ public class EtlPipelineService {
 
   public Page<EtlPipeline> getAll(Pageable pageable) {
     return repository.findAll(pageable);
-  }
-
-  public EtlPipeline update(String id, EtlPipeline request) {
-    EtlPipelineProjection etlPipeline = getEtlPipelineProjection(id);
-    request.setId(etlPipeline.getId());
-    request.setCreatedOn(etlPipeline.getCreatedOn());
-    return create(request);
   }
 
   public String delete(String id) {
