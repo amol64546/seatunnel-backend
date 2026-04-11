@@ -8,6 +8,7 @@ import com.seatunnel.orchestrator.enums.JobMode;
 import com.seatunnel.orchestrator.enums.JobStatus;
 import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
+import com.seatunnel.orchestrator.model.ETLJobOverview;
 import com.seatunnel.orchestrator.model.ETLJobStatus;
 import com.seatunnel.orchestrator.model.EtlPipelineInstance;
 import com.seatunnel.orchestrator.projection.EtlPipelineProjection;
@@ -260,4 +261,38 @@ public class EtlJobService {
       .map(json -> json.path("jobStatus").asText())
       .onErrorResume(e -> Mono.just("ERROR")); // Handle downstream failures gracefully
   }
+
+  public ETLJobOverview getJobsOverview() {
+    log.info("Fetching ETL overview information");
+    JsonNode response = commonUtil.restClient(
+      null,
+      HttpMethod.GET,
+      properties.getEtlServiceUrl() + "/overview",
+      null);
+
+    return objectMapper.convertValue(
+      response,
+      ETLJobOverview.class
+    );
+  }
+
+  public Object getJobsByStatus(JobStatus status) {
+    log.info("Fetching ETL jobs with status: {}", status);
+
+    String url = properties.getEtlServiceUrl();
+    if (ObjectUtils.isEmpty(status)) {
+      url += "/finished-jobs";
+    } else if (status.equals(JobStatus.RUNNING)) {
+      url += "/running-jobs";
+    } else {
+      url += "/finished-jobs/" + status;
+    }
+    log.info("Constructed URL for fetching ETL jobs: {}", url);
+    return commonUtil.restClient(
+      null,
+      HttpMethod.GET,
+      url,
+      null);
+  }
+
 }

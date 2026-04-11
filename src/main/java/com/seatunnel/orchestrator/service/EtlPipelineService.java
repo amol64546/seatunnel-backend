@@ -171,5 +171,11 @@ public class EtlPipelineService {
     return etlPipeline;
   }
 
+  public EtlPipeline update(String id, EtlPipeline request) {
+    EtlPipelineProjection etlPipeline = getEtlPipelineProjection(id);
+    request.setId(id);
+    request.setCreatedOn(etlPipeline.getCreatedOn());
+    return create(request);
+  }
 
 }

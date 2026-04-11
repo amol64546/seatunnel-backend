@@ -57,4 +57,11 @@ public class PipelineController {
       etlJobService.executePipeline(id, jobId, env));
   }
 
+  @PutMapping("/{id}")
+  public ResponseEntity<?> put(
+    @PathVariable String id,
+    @RequestBody EtlPipeline request) {
+    return ResponseEntity.ok(service.update(id, request));
+  }
+
 }
