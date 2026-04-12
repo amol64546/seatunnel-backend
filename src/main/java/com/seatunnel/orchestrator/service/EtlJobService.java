@@ -6,15 +6,13 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.seatunnel.orchestrator.config.OrchestrationProperties;
 import com.seatunnel.orchestrator.enums.JobMode;
 import com.seatunnel.orchestrator.enums.JobStatus;
+import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
-import com.seatunnel.orchestrator.model.ETLJobOverview;
-import com.seatunnel.orchestrator.model.ETLJobStatus;
-import com.seatunnel.orchestrator.model.EtlPipelineInstance;
-import com.seatunnel.orchestrator.projection.EtlPipelineProjection;
+import com.seatunnel.orchestrator.model.*;
 import com.seatunnel.orchestrator.repository.EtlJobStatusRepo;
-import com.seatunnel.orchestrator.repository.EtlPipelineInstanceRepo;
 import com.seatunnel.orchestrator.util.CommonUtil;
+import com.seatunnel.orchestrator.validator.PipelineValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -42,7 +40,6 @@ import static com.seatunnel.orchestrator.util.Constants.*;
 @RequiredArgsConstructor
 public class EtlJobService {
 
-  private final EtlPipelineInstanceRepo etlPipelineInstanceRepo;
   private final OrchestrationProperties properties;
   private final ObjectMapper objectMapper;
   private final CommonUtil commonUtil;
@@ -58,10 +55,13 @@ public class EtlJobService {
     SourcePlugin.ORACLE_CDC.getValue(),
     SourcePlugin.SQLSERVER_CDC.getValue()
   );
+  private final PipelineValidator pipelineValidator;
 
 
   public ETLJobStatus executePipeline(String id, String jobId, Map<String, Object> env) {
-    EtlPipelineProjection etlPipeline = etlPipelineService.getEtlPipelineProjection(id);
+    EtlPipeline etlPipeline = etlPipelineService.getById(id);
+
+    pipelineValidator.validateEtlPipelineRequest(etlPipeline);
 
     if (StringUtils.isNotBlank(jobId)) {
       ETLJobStatus jobInfo = getJobsById(jobId);
@@ -89,9 +89,7 @@ public class EtlJobService {
         "Invalid job.mode value", Map.of("Allowed values", JobMode.values()));
     }
 
-    EtlPipelineInstance instance = etlPipelineInstanceRepo.getEtlPipelineInstanceByPipelineId(id)
-      .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
-        "Etl pipeline instance not found for id: %s".formatted(id)));
+    EtlPipelineInstance instance = getJobInstance(etlPipeline);
 
     instance.getSources().stream()
       .map(source -> (String) source.get("plugin_name"))
@@ -142,6 +140,34 @@ public class EtlJobService {
 
     return etlJobStatus;
   }
+
+  private EtlPipelineInstance getJobInstance(EtlPipeline pipeline) {
+    EtlPipelineInstance etlPipelineInstance = new EtlPipelineInstance();
+
+    // updating nodes config
+    pipeline.getNodes().forEach(node -> {
+      processNode(node, etlPipelineInstance);
+    });
+
+    etlPipelineInstance.setPipelineId(pipeline.getId());
+    return etlPipelineInstance;
+  }
+
+  private void processNode(Node node, EtlPipelineInstance etlPipelineInstance) {
+
+    switch (node.getPluginType()) {
+      case PluginType.SOURCE:
+        etlPipelineInstance.getSources().add(node.getConfig());
+        break;
+      case PluginType.TRANSFORM:
+        etlPipelineInstance.getTransforms().add(node.getConfig());
+        break;
+      case PluginType.SINK:
+        etlPipelineInstance.getSinks().add(node.getConfig());
+        break;
+    }
+  }
+
 
   public ETLJobStatus getJobsById(String jobId) {
     log.info("Fetching ETL job info for jobId: {}", jobId);

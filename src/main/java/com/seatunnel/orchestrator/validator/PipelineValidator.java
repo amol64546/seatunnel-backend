@@ -10,8 +10,6 @@ import com.seatunnel.orchestrator.repository.EtlBrickRepository;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,7 +18,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Aspect
 @Component
 @RequiredArgsConstructor
 public class PipelineValidator {
@@ -28,7 +25,6 @@ public class PipelineValidator {
   private final EtlBrickRepository etlBrickRepository;
   private final CommonUtil commonUtil;
 
-  @Before("@annotation(com.seatunnel.orchestrator.annotations.PipelineValidation) && args(request,..)")
   public void validateEtlPipelineRequest(EtlPipeline request) {
     commonUtil.validateMethodArguments(request);
 

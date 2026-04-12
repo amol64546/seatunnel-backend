@@ -7,6 +7,7 @@ import com.seatunnel.orchestrator.service.EtlPipelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +38,7 @@ public class PipelineController {
 
   @GetMapping
   public ResponseEntity<?> getAll(
-    @PageableDefault Pageable pageable) {
+    @PageableDefault(sort = "updatedOn", direction = Sort.Direction.DESC) Pageable pageable) {
     return ResponseEntity.ok(service.getAll(pageable));
   }
 
@@ -55,13 +56,6 @@ public class PipelineController {
     log.info("POST: /v1.0/pipeline/etl/execute/{}", id);
     return ResponseEntity.ok(
       etlJobService.executePipeline(id, jobId, env));
-  }
-
-  @PutMapping("/{id}")
-  public ResponseEntity<?> put(
-    @PathVariable String id,
-    @RequestBody EtlPipeline request) {
-    return ResponseEntity.ok(service.update(id, request));
   }
 
 }

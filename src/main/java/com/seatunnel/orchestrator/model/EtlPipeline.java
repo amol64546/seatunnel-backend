@@ -1,24 +1,22 @@
 package com.seatunnel.orchestrator.model;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.seatunnel.orchestrator.model.BaseEntity;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
-@Getter
-@Setter
+@Data
 @Document("etl_pipeline")
 public class EtlPipeline extends BaseEntity {
 
@@ -27,12 +25,12 @@ public class EtlPipeline extends BaseEntity {
 
   @NotEmpty(message = "nodes can not be empty")
   @Valid
-  private List<Node> nodes;
+  private List<Node> nodes = new ArrayList<>();
 
   @NotEmpty(message = "edges can not be empty")
   @Valid
   @JsonDeserialize(as = LinkedHashSet.class)
-  private Set<Edge> edges;
+  private Set<Edge> edges = new LinkedHashSet<>();
 
 
   @Override

@@ -1,11 +1,12 @@
 package com.seatunnel.orchestrator.service;
 
-import com.seatunnel.orchestrator.annotations.PipelineValidation;
 import com.seatunnel.orchestrator.enums.PluginType;
-import com.seatunnel.orchestrator.model.*;
+import com.seatunnel.orchestrator.model.Edge;
+import com.seatunnel.orchestrator.model.EtlBrick;
+import com.seatunnel.orchestrator.model.EtlPipeline;
+import com.seatunnel.orchestrator.model.Node;
 import com.seatunnel.orchestrator.projection.EtlPipelineProjection;
 import com.seatunnel.orchestrator.repository.EtlBrickRepository;
-import com.seatunnel.orchestrator.repository.EtlPipelineInstanceRepo;
 import com.seatunnel.orchestrator.repository.EtlPipelineRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,18 +31,14 @@ public class EtlPipelineService {
 
   private final EtlPipelineRepository repository;
   private final EtlBrickRepository etlBrickRepository;
-  private final EtlPipelineInstanceRepo etlPipelineInstanceRepo;
   private final EtlPipelineRepository etlPipelineRepository;
 
-  @PipelineValidation
   public EtlPipeline create(EtlPipeline pipeline) {
-
     if (StringUtils.isNotBlank(pipeline.getId())) {
-      EtlPipelineProjection etlPipeline = getEtlPipelineProjection(pipeline.getId());
-      pipeline.setCreatedOn(etlPipeline.getCreatedOn());
+      EtlPipelineProjection etlPipelineProjection = getEtlPipelineProjection(pipeline.getId());
+      pipeline.setId(pipeline.getId());
+      pipeline.setCreatedOn(etlPipelineProjection.getCreatedOn());
     }
-
-    EtlPipelineInstance etlPipelineInstance = new EtlPipelineInstance();
 
     // updating nodes config
     pipeline.getNodes().forEach(node -> {
@@ -50,18 +47,11 @@ public class EtlPipelineService {
       node.setPluginType(brick.getPluginType());
       brick.getConfig().putAll(node.getConfig());
       node.setConfig(brick.getConfig());
-
-      processNode(node, etlPipelineInstance);
     });
-
     connectNodes(pipeline);
-
-    EtlPipeline etlPipeline = repository.save(pipeline);
-    etlPipelineInstance.setPipelineId(etlPipeline.getId());
-    etlPipelineInstanceRepo.save(etlPipelineInstance);
-
-    return etlPipeline;
+    return repository.save(pipeline);
   }
+
 
   private void connectNodes(EtlPipeline pipeline) {
     Map<String, Map<String, Object>> sourceMap = new HashMap<>();
@@ -128,20 +118,6 @@ public class EtlPipelineService {
     targetMapConfig.put(PLUGIN_INPUT, pluginInput);
   }
 
-  private void processNode(Node node, EtlPipelineInstance etlPipelineInstance) {
-
-    switch (node.getPluginType()) {
-      case PluginType.SOURCE:
-        etlPipelineInstance.getSources().add(node.getConfig());
-        break;
-      case PluginType.TRANSFORM:
-        etlPipelineInstance.getTransforms().add(node.getConfig());
-        break;
-      case PluginType.SINK:
-        etlPipelineInstance.getSinks().add(node.getConfig());
-        break;
-    }
-  }
 
   public EtlPipeline getById(String id) {
     Optional<EtlPipeline> optionalEtlPipeline = repository.findById(id);
@@ -171,11 +147,5 @@ public class EtlPipelineService {
     return etlPipeline;
   }
 
-  public EtlPipeline update(String id, EtlPipeline request) {
-    EtlPipelineProjection etlPipeline = getEtlPipelineProjection(id);
-    request.setId(id);
-    request.setCreatedOn(etlPipeline.getCreatedOn());
-    return create(request);
-  }
 
 }
