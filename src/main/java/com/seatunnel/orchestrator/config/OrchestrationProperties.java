@@ -13,5 +13,7 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties(prefix = "orchestration", ignoreInvalidFields = true)
 public class OrchestrationProperties {
     private String etlServiceUrl;
+    private String etlServiceUsername;
+    private String etlServicePassword;
 
 }

@@ -30,7 +30,7 @@ public class PipelineValidator {
 
     List<String> nodeIds = request.getNodes().stream()
       .filter(Objects::nonNull)
-      .map(Node::getId)
+      .map(Node::getConnectorId)
       .toList();
 
     List<EtlBrickProjection> bricks = etlBrickRepository.findAllProjectedByIdIn(nodeIds);
@@ -58,7 +58,7 @@ public class PipelineValidator {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
         "At least one source and sink brick required");
 
-    List<String> errors = validateConnection(request, bricks);
+    List<String> errors = validateConnection(request);
     if (!errors.isEmpty()) {
       throw new ApiException(HttpStatus.BAD_REQUEST,
         "Plugin connection validation failed.", errors);
@@ -67,12 +67,12 @@ public class PipelineValidator {
   }
 
 
-  public static List<String> validateConnection(EtlPipeline pipeline, List<EtlBrickProjection> bricks) {
+  public static List<String> validateConnection(EtlPipeline pipeline) {
     List<String> errors = new ArrayList<>();
 
     // Create a map of node IDs to their plugin types for quick lookup
     Map<String, PluginType> nodeTypeMap = new HashMap<>();
-    for (EtlBrickProjection node : bricks) {
+    for (Node node : pipeline.getNodes()) {
       if (node.getId() != null && node.getPluginType() != null) {
         nodeTypeMap.put(node.getId(), node.getPluginType());
       }

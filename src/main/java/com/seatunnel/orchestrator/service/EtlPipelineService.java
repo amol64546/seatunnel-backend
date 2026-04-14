@@ -34,6 +34,8 @@ public class EtlPipelineService {
   private final EtlPipelineRepository etlPipelineRepository;
 
   public EtlPipeline create(EtlPipeline pipeline) {
+
+    // if id is present, it means update operation, otherwise create operation
     if (StringUtils.isNotBlank(pipeline.getId())) {
       EtlPipelineProjection etlPipelineProjection = getEtlPipelineProjection(pipeline.getId());
       pipeline.setId(pipeline.getId());
@@ -42,21 +44,21 @@ public class EtlPipelineService {
 
     // updating nodes config
     pipeline.getNodes().forEach(node -> {
-      EtlBrick brick = etlBrickRepository.findEtlBrickById(node.getId());
+      EtlBrick brick = etlBrickRepository.findEtlBrickById(node.getConnectorId());
       node.setName(brick.getName());
       node.setPluginType(brick.getPluginType());
-      brick.getConfig().putAll(node.getConfig());
-      node.setConfig(brick.getConfig());
+      brick.getConfig().putAll(node.getConfig()); // config from existing nodes
+      node.setConfig(brick.getConfig()); // override with config from request body
     });
     connectNodes(pipeline);
     return repository.save(pipeline);
   }
 
-
   private void connectNodes(EtlPipeline pipeline) {
     Map<String, Map<String, Object>> sourceMap = new HashMap<>();
     Map<String, Map<String, Object>> transformMap = new HashMap<>();
     Map<String, Map<String, Object>> sinkMap = new HashMap<>();
+
     for (Node node : pipeline.getNodes()) {
       if (node.getPluginType().equals(PluginType.SOURCE)) {
         sourceMap.put(node.getId(), node.getConfig());
@@ -96,26 +98,29 @@ public class EtlPipelineService {
 
   private void connectSourceToTarget(Edge edge, Map<String, Map<String, Object>> sourceMap,
                                      Map<String, Map<String, Object>> targetMap) {
-
-    String commonId = UUID.randomUUID().toString().replaceAll("-", "");
-
     Map<String, Object> sourceConfig = sourceMap.get(edge.getSource());
-    Map<String, Object> targetMapConfig = targetMap.get(edge.getTarget());
+    Map<String, Object> targetConfig = targetMap.get(edge.getTarget());
 
+    String commonId = (String) sourceConfig.get(PLUGIN_OUTPUT);
+    if(StringUtils.isBlank(commonId)) {
+      commonId = UUID.randomUUID().toString().replaceAll("-", "");
+    }
+
+    // if plugin_input already exists,
+    // it means this target node has multiple source nodes,
+    // we need to append the new source node to the existing plugin_input list
     List<String> pluginInput = new ArrayList<>();
-    Object raw = targetMapConfig.get(PLUGIN_INPUT);
+    Object raw = targetConfig.get(PLUGIN_INPUT);
     if (raw instanceof List<?> list) {
       for (Object e : list) {
         if (e != null) pluginInput.add(String.valueOf(e));
       }
-    } else {
-      pluginInput = new ArrayList<>();
     }
 
     pluginInput.add(commonId);
 
     sourceConfig.put(PLUGIN_OUTPUT, commonId);
-    targetMapConfig.put(PLUGIN_INPUT, pluginInput);
+    targetConfig.put(PLUGIN_INPUT, pluginInput);
   }
 
 

@@ -15,6 +15,8 @@ public class EtlNodeWritingConverter implements Converter<Node, Document> {
 
     doc.put("id", source.getId());
     doc.put("pluginType", source.getPluginType());
+    doc.put("name", source.getName());
+    doc.put("connectorId", source.getConnectorId());
 
     if (source.getConfig() != null) {
       doc.put("config", MapKeyConverter.convertDotToHash(source.getConfig()));

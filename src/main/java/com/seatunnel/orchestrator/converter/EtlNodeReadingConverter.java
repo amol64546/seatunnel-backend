@@ -18,6 +18,8 @@ public class EtlNodeReadingConverter implements Converter<Document, Node> {
     Node node = new Node();
 
     node.setId(source.getString("id"));
+    node.setName(source.getString("name"));
+    node.setConnectorId(source.getString("connectorId"));
     node.setPluginType(PluginType.valueOf(source.getString("pluginType").toUpperCase()));
 
     // Convert config: hash -> dot

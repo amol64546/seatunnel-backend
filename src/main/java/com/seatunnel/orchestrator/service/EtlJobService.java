@@ -76,7 +76,6 @@ public class EtlJobService {
       }
     }
 
-
     String jobMode = (String) env.get(JOB_MODE);
     if (StringUtils.isBlank(jobMode)) {
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
@@ -90,8 +89,8 @@ public class EtlJobService {
     }
 
     EtlPipelineInstance instance = getJobInstance(etlPipeline);
-
-    instance.getSources().stream()
+    instance.setEnv(env);
+    instance.getSource().stream()
       .map(source -> (String) source.get("plugin_name"))
       .filter(StringUtils::isNotBlank)
       .filter(pluginName -> !pluginName.equalsIgnoreCase(SourcePlugin.FAKESOURCE.getValue()))
@@ -107,8 +106,6 @@ public class EtlJobService {
             "For batch job, source plugin can not be one of %s".formatted(CDC_SOURCE_PLUGINS));
         }
       });
-
-    instance.setEnv(env);
 
     UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder
       .fromHttpUrl(properties.getEtlServiceUrl())
@@ -134,6 +131,7 @@ public class EtlJobService {
       .pipelineId(etlPipeline.getId())
       .createTime(Date.from(java.time.Instant.now()))
       .envOptions(env)
+      .pipelineInstance(instance)
       .build();
 
     etlJobStatusRepo.save(etlJobStatus);
@@ -143,13 +141,11 @@ public class EtlJobService {
 
   private EtlPipelineInstance getJobInstance(EtlPipeline pipeline) {
     EtlPipelineInstance etlPipelineInstance = new EtlPipelineInstance();
-
     // updating nodes config
     pipeline.getNodes().forEach(node -> {
       processNode(node, etlPipelineInstance);
     });
 
-    etlPipelineInstance.setPipelineId(pipeline.getId());
     return etlPipelineInstance;
   }
 
@@ -157,13 +153,13 @@ public class EtlJobService {
 
     switch (node.getPluginType()) {
       case PluginType.SOURCE:
-        etlPipelineInstance.getSources().add(node.getConfig());
+        etlPipelineInstance.getSource().add(node.getConfig());
         break;
       case PluginType.TRANSFORM:
-        etlPipelineInstance.getTransforms().add(node.getConfig());
+        etlPipelineInstance.getTransform().add(node.getConfig());
         break;
       case PluginType.SINK:
-        etlPipelineInstance.getSinks().add(node.getConfig());
+        etlPipelineInstance.getSink().add(node.getConfig());
         break;
     }
   }

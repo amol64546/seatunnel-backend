@@ -43,9 +43,6 @@ public class ETLJobStatus implements Serializable {
 
   private String jobId;
 
-  // Extra field
-  private String pipelineId;
-
   private String jobName;
 
   private boolean isStoppedWithSavePoint;
@@ -56,9 +53,6 @@ public class ETLJobStatus implements Serializable {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
   private Date finishTime;
 
-  // Extra field
-  private Long completionTimeSec;
-
   private Map<String, Object> envOptions;
 
   private JobStatus jobStatus;
@@ -66,6 +60,13 @@ public class ETLJobStatus implements Serializable {
   private String errorMsg;
 
   private Map<String, Object> metrics;
+
+  // Extra field
+  private String pipelineId;
+
+  private Long completionTimeSec;
+
+  private EtlPipelineInstance pipelineInstance;
 
   @Override
   public String toString() {

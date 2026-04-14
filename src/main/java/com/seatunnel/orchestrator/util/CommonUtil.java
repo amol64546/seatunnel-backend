@@ -1,6 +1,7 @@
 package com.seatunnel.orchestrator.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.seatunnel.orchestrator.config.OrchestrationProperties;
 import com.seatunnel.orchestrator.exception.ApiException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -23,6 +24,7 @@ public class CommonUtil {
 
   private final Validator validator;
   private final RestTemplate restTemplate;
+  private final OrchestrationProperties orchestrationProperties;
 
   public void validateMethodArguments(Object payload) {
     Set<ConstraintViolation<Object>> violations = validator.validate(payload);
@@ -38,11 +40,18 @@ public class CommonUtil {
     }
   }
 
+  private HttpHeaders buildHttpHeaders() {
+    HttpHeaders httpHeaders = new HttpHeaders();
+    httpHeaders.setBasicAuth(orchestrationProperties.getEtlServiceUsername(),
+      orchestrationProperties.getEtlServicePassword());
+    return httpHeaders;
+  }
+
   public JsonNode restClient(Object requestBody,
                              HttpMethod httpMethod, String url, HttpHeaders httpHeaders) {
     log.info("------- Making rest call to url: {}, method: {} --------", url, httpMethod);
     if (httpHeaders == null) {
-      httpHeaders = new HttpHeaders();
+      httpHeaders = buildHttpHeaders();
     }
     httpHeaders.add("Content-Type", "application/json");
     HttpEntity<Object> requestEntity = new HttpEntity<>(requestBody, httpHeaders);

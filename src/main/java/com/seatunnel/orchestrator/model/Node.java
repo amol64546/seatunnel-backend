@@ -34,6 +34,9 @@ public class Node implements Serializable {
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)
   private String name;
 
+  @NotBlank(message = "connectorId can not be blank")
+  private String connectorId;
+
   @NotBlank(message = "id can not be blank")
   private String id;
 

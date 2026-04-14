@@ -28,6 +28,16 @@ public class JobController {
     return ResponseEntity.ok().body(etlJobService.getJobsById(jobId));
   }
 
+  @GetMapping(value = "/jobs", produces = {"application/json"})
+  public ResponseEntity<Object> getJobsByStatus(@RequestParam JobStatus status) {
+    return ResponseEntity.ok().body(etlJobService.getJobsByStatus(status));
+  }
+
+  @GetMapping(value = "/jobs/overview", produces = {"application/json"})
+  public ResponseEntity<ETLJobOverview> getJobsOverview() {
+    return ResponseEntity.ok().body(etlJobService.getJobsOverview());
+  }
+
   @PostMapping(value = "/stop/{jobId}", produces = {"application/json"})
   public ResponseEntity<Map<String, String>> stopJob(@PathVariable String jobId,
                                                      @RequestParam(required = false) boolean isStopWithSavePoint) {
@@ -40,17 +50,6 @@ public class JobController {
   public Flux<String> streamJobStatus(@PathVariable String id) {
     return etlJobService.streamJobStatus(id);
   }
-
-  @GetMapping(value = "/jobs", produces = {"application/json"})
-  public ResponseEntity<Object> getJobsByStatus(@RequestParam JobStatus status) {
-    return ResponseEntity.ok().body(etlJobService.getJobsByStatus(status));
-  }
-
-  @GetMapping(value = "/jobs/overview", produces = {"application/json"})
-  public ResponseEntity<ETLJobOverview> getJobsOverview() {
-    return ResponseEntity.ok().body(etlJobService.getJobsOverview());
-  }
-
 
   @Hidden
   @PostMapping(value = "/callback", consumes = "application/json")
