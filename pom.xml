@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.etl</groupId>
-    <artifactId>seatunnel-backend</artifactId>
+    <artifactId>seatunnel-orchestrator</artifactId>
     <version>1.0.0</version>
          
     <name>SeaTunnel-Orchestrator</name>
