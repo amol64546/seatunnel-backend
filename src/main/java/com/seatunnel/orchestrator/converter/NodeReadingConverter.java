@@ -10,7 +10,7 @@ import org.springframework.data.convert.ReadingConverter;
 import java.util.Map;
 
 @ReadingConverter
-public class EtlNodeReadingConverter implements Converter<Document, Node> {
+public class NodeReadingConverter implements Converter<Document, Node> {
 
   @Override
   public Node convert(Document source) {

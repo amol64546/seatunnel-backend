@@ -7,7 +7,7 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.WritingConverter;
 
 @WritingConverter
-public class EtlNodeWritingConverter implements Converter<Node, Document> {
+public class NodeWritingConverter implements Converter<Node, Document> {
 
   @Override
   public Document convert(Node source) {

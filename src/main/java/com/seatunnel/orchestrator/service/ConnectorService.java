@@ -1,12 +1,11 @@
 package com.seatunnel.orchestrator.service;
 
-import com.seatunnel.orchestrator.annotations.BrickValidation;
-import com.seatunnel.orchestrator.model.EtlBrick;
-import com.seatunnel.orchestrator.repository.EtlBrickRepository;
+import com.seatunnel.orchestrator.annotations.ConnectorValidation;
+import com.seatunnel.orchestrator.model.Connector;
+import com.seatunnel.orchestrator.repository.ConnectorRepository;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -18,32 +17,32 @@ import java.util.Optional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class EtlBrickService {
+public class ConnectorService {
 
-  private final EtlBrickRepository repository;
+  private final ConnectorRepository repository;
   private final CommonUtil commonUtil;
 
-  @BrickValidation
-  public EtlBrick create(EtlBrick request) {
+  @ConnectorValidation
+  public Connector create(Connector request) {
     commonUtil.validateMethodArguments(request);
     return repository.save(request);
   }
 
-  public EtlBrick getById(String id) {
-    Optional<EtlBrick> etlBrickOptional = repository.findById(id);
+  public Connector getById(String id) {
+    Optional<Connector> etlBrickOptional = repository.findById(id);
     if (etlBrickOptional.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-        "Etl brick not found.");
+        "Connector not found.");
     }
     return etlBrickOptional.get();
   }
 
-  public Page<EtlBrick> getAll(Pageable pageable) {
+  public Page<Connector> getAll(Pageable pageable) {
     return repository.findAll(pageable);
   }
 
-  public EtlBrick update(String id, EtlBrick brick) {
-    EtlBrick existingBrick = getById(id);
+  public Connector update(String id, Connector brick) {
+    Connector existingBrick = getById(id);
     brick.setId(id);
     brick.setCreatedOn(existingBrick.getCreatedOn());
     return create(brick);
@@ -51,7 +50,7 @@ public class EtlBrickService {
 
   public String delete(String id) {
     repository.deleteById(id);
-    return "Successfully delete ETL brick with id:%s".formatted(id);
+    return "Successfully delete connector with id:%s".formatted(id);
   }
 
 }

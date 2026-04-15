@@ -5,12 +5,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.seatunnel.orchestrator.config.OrchestrationProperties;
 import com.seatunnel.orchestrator.enums.JobMode;
-import com.seatunnel.orchestrator.enums.JobStatus;
 import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
 import com.seatunnel.orchestrator.model.*;
-import com.seatunnel.orchestrator.repository.EtlJobStatusRepo;
+import com.seatunnel.orchestrator.repository.JobRepo;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import com.seatunnel.orchestrator.validator.PipelineValidator;
 import lombok.RequiredArgsConstructor;
@@ -38,13 +37,13 @@ import static com.seatunnel.orchestrator.util.Constants.*;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class EtlJobService {
+public class JobService {
 
   private final OrchestrationProperties properties;
   private final ObjectMapper objectMapper;
   private final CommonUtil commonUtil;
-  private final EtlJobStatusRepo etlJobStatusRepo;
-  private final EtlPipelineService etlPipelineService;
+  private final JobRepo jobRepo;
+  private final PipelineService pipelineService;
   private final WebClient webClient;
   private final static Set<String> CDC_SOURCE_PLUGINS = Set.of(
     SourcePlugin.KAFKA.getValue(),
@@ -58,13 +57,13 @@ public class EtlJobService {
   private final PipelineValidator pipelineValidator;
 
 
-  public ETLJobStatus executePipeline(String id, String jobId, Map<String, Object> env) {
-    EtlPipeline etlPipeline = etlPipelineService.getById(id);
+  public Job executePipeline(String id, String jobId, Map<String, Object> env) {
+    Pipeline pipeline = pipelineService.getById(id);
 
-    pipelineValidator.validateEtlPipelineRequest(etlPipeline);
+    pipelineValidator.validateEtlPipelineRequest(pipeline);
 
     if (StringUtils.isNotBlank(jobId)) {
-      ETLJobStatus jobInfo = getJobsById(jobId);
+      Job jobInfo = getJobsById(jobId);
       if (ObjectUtils.isEmpty(jobInfo)) {
         throw new ApiException(HttpStatus.NOT_FOUND,
           "Job with jobId:%s not found".formatted(jobId));
@@ -88,7 +87,7 @@ public class EtlJobService {
         "Invalid job.mode value", Map.of("Allowed values", JobMode.values()));
     }
 
-    EtlPipelineInstance instance = getJobInstance(etlPipeline);
+    JobInstance instance = getJobInstance(pipeline);
     instance.setEnv(env);
     instance.getSource().stream()
       .map(source -> (String) source.get("plugin_name"))
@@ -110,7 +109,7 @@ public class EtlJobService {
     UriComponentsBuilder uriComponentsBuilder = UriComponentsBuilder
       .fromHttpUrl(properties.getEtlServiceUrl())
       .path("/submit-job")
-      .queryParam("jobName", etlPipeline.getName());
+      .queryParam("jobName", pipeline.getName());
 
     if (ObjectUtils.isNotEmpty(jobId)) {
       uriComponentsBuilder
@@ -124,71 +123,71 @@ public class EtlJobService {
       uriComponentsBuilder.toUriString(),
       null);
 
-    ETLJobStatus etlJobStatus = ETLJobStatus.builder()
+    Job job = Job.builder()
       .jobId(jsonNode.get(JOB_ID).asText())
-      .jobStatus(JobStatus.SUBMITTED)
-      .jobName(etlPipeline.getName())
-      .pipelineId(etlPipeline.getId())
+      .jobStatus(com.seatunnel.orchestrator.enums.JobStatus.SUBMITTED)
+      .jobName(pipeline.getName())
+      .pipelineId(pipeline.getId())
       .createTime(Date.from(java.time.Instant.now()))
       .envOptions(env)
-      .pipelineInstance(instance)
+      .jobInstance(instance)
       .build();
 
-    etlJobStatusRepo.save(etlJobStatus);
+    jobRepo.save(job);
 
-    return etlJobStatus;
+    return job;
   }
 
-  private EtlPipelineInstance getJobInstance(EtlPipeline pipeline) {
-    EtlPipelineInstance etlPipelineInstance = new EtlPipelineInstance();
+  private JobInstance getJobInstance(Pipeline pipeline) {
+    JobInstance jobInstance = new JobInstance();
     // updating nodes config
     pipeline.getNodes().forEach(node -> {
-      processNode(node, etlPipelineInstance);
+      processNode(node, jobInstance);
     });
 
-    return etlPipelineInstance;
+    return jobInstance;
   }
 
-  private void processNode(Node node, EtlPipelineInstance etlPipelineInstance) {
+  private void processNode(Node node, JobInstance jobInstance) {
 
     switch (node.getPluginType()) {
       case PluginType.SOURCE:
-        etlPipelineInstance.getSource().add(node.getConfig());
+        jobInstance.getSource().add(node.getConfig());
         break;
       case PluginType.TRANSFORM:
-        etlPipelineInstance.getTransform().add(node.getConfig());
+        jobInstance.getTransform().add(node.getConfig());
         break;
       case PluginType.SINK:
-        etlPipelineInstance.getSink().add(node.getConfig());
+        jobInstance.getSink().add(node.getConfig());
         break;
     }
   }
 
 
-  public ETLJobStatus getJobsById(String jobId) {
+  public Job getJobsById(String jobId) {
     log.info("Fetching ETL job info for jobId: {}", jobId);
 
-    ETLJobStatus etlJobStatus = validateJobExists(jobId);
-    if (!etlJobStatus.getJobStatus().equals(JobStatus.SUBMITTED)) {
-      return etlJobStatus;
+    Job job = validateJobExists(jobId);
+    if (!job.getJobStatus().equals(com.seatunnel.orchestrator.enums.JobStatus.SUBMITTED)) {
+      return job;
     }
-    return etlJobStatus;
+    return job;
   }
 
-  private ETLJobStatus validateJobExists(String jobId) {
-    ETLJobStatus etlJobStatus = etlJobStatusRepo.findEtlJobByJobId(jobId);
-    if (ObjectUtils.isEmpty(etlJobStatus)) {
+  private Job validateJobExists(String jobId) {
+    Job job = jobRepo.findEtlJobByJobId(jobId);
+    if (ObjectUtils.isEmpty(job)) {
       throw new ApiException(HttpStatus.NOT_FOUND,
         "Job with id:%s not found".formatted(jobId));
     }
-    return etlJobStatus;
+    return job;
   }
 
   public Map<String, String> stopJob(String jobId, boolean isStopWithSavePoint) {
 
-    ETLJobStatus etlJobStatus = validateJobExists(jobId);
+    Job job = validateJobExists(jobId);
 
-    if (!etlJobStatus.getJobStatus().equals(JobStatus.RUNNING)) {
+    if (!job.getJobStatus().equals(com.seatunnel.orchestrator.enums.JobStatus.RUNNING)) {
       throw new ApiException(HttpStatus.BAD_REQUEST,
         "Job with id:%s is not running, can not stop".formatted(jobId));
     }
@@ -204,9 +203,9 @@ public class EtlJobService {
       properties.getEtlServiceUrl() + "/stop-job",
       null);
 
-    etlJobStatus.setJobStatus(JobStatus.CANCELED);
-    etlJobStatus.setStoppedWithSavePoint(isStopWithSavePoint);
-    etlJobStatusRepo.save(etlJobStatus);
+    job.setJobStatus(com.seatunnel.orchestrator.enums.JobStatus.CANCELED);
+    job.setStoppedWithSavePoint(isStopWithSavePoint);
+    jobRepo.save(job);
 
     return Map.of("msg", String.format("Job cancelled with jobId : %s", jobId));
   }
@@ -220,8 +219,8 @@ public class EtlJobService {
       return;
     }
 
-    ETLJobStatus etlJobStatus = etlJobStatusRepo.findEtlJobByJobId(jobId);
-    if (ObjectUtils.isEmpty(etlJobStatus)) {
+    Job job = jobRepo.findEtlJobByJobId(jobId);
+    if (ObjectUtils.isEmpty(job)) {
       log.warn("EtlJob not found in the db.");
       return;
     }
@@ -234,9 +233,9 @@ public class EtlJobService {
 
     log.info("Etl Job info response: {}", response);
 
-    ETLJobStatus jobDetails;
+    Job jobDetails;
     objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    jobDetails = objectMapper.convertValue(response, ETLJobStatus.class);
+    jobDetails = objectMapper.convertValue(response, Job.class);
 
     long diffInSeconds = -1L;
 
@@ -248,9 +247,9 @@ public class EtlJobService {
     }
 
     jobDetails.setCompletionTimeSec(diffInSeconds);
-    jobDetails.setId(etlJobStatus.getId());
+    jobDetails.setId(job.getId());
 
-    etlJobStatusRepo.save(jobDetails);
+    jobRepo.save(jobDetails);
 
   }
 
@@ -284,7 +283,7 @@ public class EtlJobService {
       .onErrorResume(e -> Mono.just("ERROR")); // Handle downstream failures gracefully
   }
 
-  public ETLJobOverview getJobsOverview() {
+  public JobOverview getJobsOverview() {
     log.info("Fetching ETL overview information");
     JsonNode response = commonUtil.restClient(
       null,
@@ -294,17 +293,17 @@ public class EtlJobService {
 
     return objectMapper.convertValue(
       response,
-      ETLJobOverview.class
+      JobOverview.class
     );
   }
 
-  public Object getJobsByStatus(JobStatus status) {
+  public Object getJobsByStatus(com.seatunnel.orchestrator.enums.JobStatus status) {
     log.info("Fetching ETL jobs with status: {}", status);
 
     String url = properties.getEtlServiceUrl();
     if (ObjectUtils.isEmpty(status)) {
       url += "/finished-jobs";
-    } else if (status.equals(JobStatus.RUNNING)) {
+    } else if (status.equals(com.seatunnel.orchestrator.enums.JobStatus.RUNNING)) {
       url += "/running-jobs";
     } else {
       url += "/finished-jobs/" + status;

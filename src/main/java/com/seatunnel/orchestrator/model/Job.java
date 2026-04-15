@@ -1,7 +1,5 @@
 
-/*
- * Copyright (c) 2024. Gaian Solutions Pvt. Ltd. All rights reserved.
- */
+
 
 package com.seatunnel.orchestrator.model;
 
@@ -10,14 +8,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.seatunnel.orchestrator.enums.JobStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.bson.json.JsonObject;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -32,8 +28,8 @@ import java.util.Map;
 @NoArgsConstructor
 @JsonInclude(Include.NON_EMPTY)
 @JsonIgnoreProperties(ignoreUnknown = true)
-@Document("etl_job_status")
-public class ETLJobStatus implements Serializable {
+@Document("jobs")
+public class Job implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
@@ -55,7 +51,7 @@ public class ETLJobStatus implements Serializable {
 
   private Map<String, Object> envOptions;
 
-  private JobStatus jobStatus;
+  private com.seatunnel.orchestrator.enums.JobStatus jobStatus;
 
   private String errorMsg;
 
@@ -66,7 +62,7 @@ public class ETLJobStatus implements Serializable {
 
   private Long completionTimeSec;
 
-  private EtlPipelineInstance pipelineInstance;
+  private JobInstance jobInstance;
 
   @Override
   public String toString() {

@@ -1,7 +1,5 @@
 
-/*
- * Copyright (c) 2024. Gaian Solutions Pvt. Ltd. All rights reserved.
- */
+
 package com.seatunnel.orchestrator.config;
 
 import lombok.Data;

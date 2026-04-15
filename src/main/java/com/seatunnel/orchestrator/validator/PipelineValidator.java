@@ -3,10 +3,10 @@ package com.seatunnel.orchestrator.validator;
 import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.exception.ApiException;
 import com.seatunnel.orchestrator.model.Edge;
-import com.seatunnel.orchestrator.model.EtlPipeline;
+import com.seatunnel.orchestrator.model.Pipeline;
 import com.seatunnel.orchestrator.model.Node;
-import com.seatunnel.orchestrator.projection.EtlBrickProjection;
-import com.seatunnel.orchestrator.repository.EtlBrickRepository;
+import com.seatunnel.orchestrator.projection.ConnectorProjection;
+import com.seatunnel.orchestrator.repository.ConnectorRepository;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PipelineValidator {
 
-  private final EtlBrickRepository etlBrickRepository;
+  private final ConnectorRepository connectorRepository;
   private final CommonUtil commonUtil;
 
-  public void validateEtlPipelineRequest(EtlPipeline request) {
+  public void validateEtlPipelineRequest(Pipeline request) {
     commonUtil.validateMethodArguments(request);
 
     List<String> nodeIds = request.getNodes().stream()
@@ -33,10 +33,10 @@ public class PipelineValidator {
       .map(Node::getConnectorId)
       .toList();
 
-    List<EtlBrickProjection> bricks = etlBrickRepository.findAllProjectedByIdIn(nodeIds);
+    List<ConnectorProjection> bricks = connectorRepository.findAllProjectedByIdIn(nodeIds);
 
     Set<String> foundBrickIds = bricks.stream()
-      .map(EtlBrickProjection::getId)
+      .map(ConnectorProjection::getId)
       .collect(Collectors.toSet());
 
     List<String> missingBrickIds = nodeIds.stream()
@@ -45,7 +45,7 @@ public class PipelineValidator {
 
     if (!missingBrickIds.isEmpty()) {
       throw new ApiException(HttpStatus.NOT_FOUND,
-        "Bricks not found", missingBrickIds);
+        "Connectors not found", missingBrickIds);
     }
 
     boolean hasSourceBrick = bricks.stream()
@@ -56,7 +56,7 @@ public class PipelineValidator {
 
     if (!hasSourceBrick || !hasSinkBrick)
       throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-        "At least one source and sink brick required");
+        "At least one source and sink connector required");
 
     List<String> errors = validateConnection(request);
     if (!errors.isEmpty()) {
@@ -67,7 +67,7 @@ public class PipelineValidator {
   }
 
 
-  public static List<String> validateConnection(EtlPipeline pipeline) {
+  public static List<String> validateConnection(Pipeline pipeline) {
     List<String> errors = new ArrayList<>();
 
     // Create a map of node IDs to their plugin types for quick lookup

@@ -2,7 +2,7 @@ package com.seatunnel.orchestrator.projection;
 
 import com.seatunnel.orchestrator.enums.PluginType;
 
-public interface EtlBrickProjection {
+public interface ConnectorProjection {
 
     String getId();
     PluginType getPluginType();

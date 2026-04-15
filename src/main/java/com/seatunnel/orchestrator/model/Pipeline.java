@@ -17,8 +17,8 @@ import java.util.Set;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
-@Document("etl_pipeline")
-public class EtlPipeline extends BaseEntity {
+@Document("pipelines")
+public class Pipeline extends BaseEntity {
 
   @Id
   private String id;

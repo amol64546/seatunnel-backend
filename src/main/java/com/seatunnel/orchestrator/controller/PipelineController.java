@@ -1,9 +1,9 @@
 package com.seatunnel.orchestrator.controller;
 
-import com.seatunnel.orchestrator.model.ETLJobStatus;
-import com.seatunnel.orchestrator.model.EtlPipeline;
-import com.seatunnel.orchestrator.service.EtlJobService;
-import com.seatunnel.orchestrator.service.EtlPipelineService;
+import com.seatunnel.orchestrator.model.Job;
+import com.seatunnel.orchestrator.model.Pipeline;
+import com.seatunnel.orchestrator.service.JobService;
+import com.seatunnel.orchestrator.service.PipelineService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -20,13 +20,13 @@ import java.util.Map;
 @Slf4j
 public class PipelineController {
 
-  private final EtlPipelineService service;
-  private final EtlJobService etlJobService;
+  private final PipelineService service;
+  private final JobService jobService;
 
 
   @PostMapping
   public ResponseEntity<?> create(
-    @RequestBody EtlPipeline request) {
+    @RequestBody Pipeline request) {
     return ResponseEntity.ok(service.create(request));
   }
 
@@ -49,13 +49,13 @@ public class PipelineController {
   }
 
   @PostMapping(value = "/execute/{id}", produces = {"application/json"})
-  public ResponseEntity<ETLJobStatus> executePipeline(
+  public ResponseEntity<Job> executePipeline(
     @PathVariable String id,
     @RequestParam(required = false) String jobId,
     @RequestBody Map<String, Object> env) {
     log.info("POST: /v1.0/pipeline/etl/execute/{}", id);
     return ResponseEntity.ok(
-      etlJobService.executePipeline(id, jobId, env));
+      jobService.executePipeline(id, jobId, env));
   }
 
 }

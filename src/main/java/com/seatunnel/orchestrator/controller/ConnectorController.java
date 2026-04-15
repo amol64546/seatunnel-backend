@@ -1,7 +1,7 @@
 package com.seatunnel.orchestrator.controller;
 
-import com.seatunnel.orchestrator.model.EtlBrick;
-import com.seatunnel.orchestrator.service.EtlBrickService;
+import com.seatunnel.orchestrator.model.Connector;
+import com.seatunnel.orchestrator.service.ConnectorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
@@ -13,16 +13,16 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/bricks")
+@RequestMapping("/connectors")
 @RequiredArgsConstructor
 @Slf4j
-public class BrickController {
+public class ConnectorController {
 
-  private final EtlBrickService service;
+  private final ConnectorService service;
 
   @PostMapping
   public ResponseEntity<?> create(
-    @RequestBody EtlBrick request) {
+    @RequestBody Connector request) {
     return ResponseEntity.ok(service.create(request));
   }
 
@@ -41,7 +41,7 @@ public class BrickController {
   @PutMapping("/{id}")
   public ResponseEntity<?> put(
     @PathVariable String id,
-    @RequestBody EtlBrick request) {
+    @RequestBody Connector request) {
     return ResponseEntity.ok(service.update(id, request));
   }
 

@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ETLJobOverview {
+public class JobOverview {
     private String runningJobs;
     private String finishedJobs;
     private String failedJobs;

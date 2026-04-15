@@ -1,7 +1,5 @@
 
-/*
- * Copyright (c) 2024. Gaian Solutions Pvt. Ltd. All rights reserved.
- */
+
 
 package com.seatunnel.orchestrator.model;
 
@@ -25,7 +23,7 @@ import java.util.Map;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class EtlPipelineInstance implements Serializable {
+public class JobInstance implements Serializable {
 
   private Map<String, Object> env;
 

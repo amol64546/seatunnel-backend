@@ -16,8 +16,8 @@ import java.util.Map;
 @EqualsAndHashCode(callSuper = true)
 @Getter
 @Setter
-@Document("etl_brick")
-public class EtlBrick extends BaseEntity {
+@Document("connectors")
+public class Connector extends BaseEntity {
 
   @Id
   @JsonProperty(access = JsonProperty.Access.READ_ONLY)

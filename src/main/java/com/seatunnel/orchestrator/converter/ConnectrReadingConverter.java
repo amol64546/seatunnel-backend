@@ -1,7 +1,7 @@
 package com.seatunnel.orchestrator.converter;
 
 import com.seatunnel.orchestrator.enums.PluginType;
-import com.seatunnel.orchestrator.model.EtlBrick;
+import com.seatunnel.orchestrator.model.Connector;
 import com.seatunnel.orchestrator.util.MapKeyConverter;
 import org.bson.Document;
 import org.springframework.core.convert.converter.Converter;
@@ -10,12 +10,12 @@ import org.springframework.data.convert.ReadingConverter;
 import java.util.Map;
 
 @ReadingConverter
-public class EtlBrickReadingConverter implements Converter<Document, EtlBrick> {
+public class ConnectrReadingConverter implements Converter<Document, Connector> {
 
   @Override
-  public EtlBrick convert(Document source) {
+  public Connector convert(Document source) {
 
-    EtlBrick brick = new EtlBrick();
+    Connector brick = new Connector();
 
     brick.setId(source.get("_id").toString());
     brick.setName(source.getString("name"));

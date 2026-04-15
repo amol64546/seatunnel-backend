@@ -7,12 +7,12 @@
 
 package com.seatunnel.orchestrator.repository;
 
-import com.seatunnel.orchestrator.model.ETLJobStatus;
+import com.seatunnel.orchestrator.model.Job;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-public interface EtlJobStatusRepo extends MongoRepository<ETLJobStatus, String> {
+public interface JobRepo extends MongoRepository<Job, String> {
 
 
-  ETLJobStatus findEtlJobByJobId(String jobId);
+  Job findEtlJobByJobId(String jobId);
 
 }

@@ -2,12 +2,12 @@ package com.seatunnel.orchestrator.service;
 
 import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.model.Edge;
-import com.seatunnel.orchestrator.model.EtlBrick;
-import com.seatunnel.orchestrator.model.EtlPipeline;
+import com.seatunnel.orchestrator.model.Connector;
+import com.seatunnel.orchestrator.model.Pipeline;
 import com.seatunnel.orchestrator.model.Node;
-import com.seatunnel.orchestrator.projection.EtlPipelineProjection;
-import com.seatunnel.orchestrator.repository.EtlBrickRepository;
-import com.seatunnel.orchestrator.repository.EtlPipelineRepository;
+import com.seatunnel.orchestrator.projection.PipelineProjection;
+import com.seatunnel.orchestrator.repository.ConnectorRepository;
+import com.seatunnel.orchestrator.repository.PipelineRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -26,25 +26,25 @@ import static com.seatunnel.orchestrator.util.Constants.PLUGIN_OUTPUT;
 @Service("etl_pipeline_service")
 @Slf4j
 @RequiredArgsConstructor
-public class EtlPipelineService {
+public class PipelineService {
 
 
-  private final EtlPipelineRepository repository;
-  private final EtlBrickRepository etlBrickRepository;
-  private final EtlPipelineRepository etlPipelineRepository;
+  private final PipelineRepository repository;
+  private final ConnectorRepository connectorRepository;
+  private final PipelineRepository pipelineRepository;
 
-  public EtlPipeline create(EtlPipeline pipeline) {
+  public Pipeline create(Pipeline pipeline) {
 
     // if id is present, it means update operation, otherwise create operation
     if (StringUtils.isNotBlank(pipeline.getId())) {
-      EtlPipelineProjection etlPipelineProjection = getEtlPipelineProjection(pipeline.getId());
+      PipelineProjection pipelineProjection = getEtlPipelineProjection(pipeline.getId());
       pipeline.setId(pipeline.getId());
-      pipeline.setCreatedOn(etlPipelineProjection.getCreatedOn());
+      pipeline.setCreatedOn(pipelineProjection.getCreatedOn());
     }
 
     // updating nodes config
     pipeline.getNodes().forEach(node -> {
-      EtlBrick brick = etlBrickRepository.findEtlBrickById(node.getConnectorId());
+      Connector brick = connectorRepository.findEtlBrickById(node.getConnectorId());
       node.setName(brick.getName());
       node.setPluginType(brick.getPluginType());
       brick.getConfig().putAll(node.getConfig()); // config from existing nodes
@@ -54,7 +54,7 @@ public class EtlPipelineService {
     return repository.save(pipeline);
   }
 
-  private void connectNodes(EtlPipeline pipeline) {
+  private void connectNodes(Pipeline pipeline) {
     Map<String, Map<String, Object>> sourceMap = new HashMap<>();
     Map<String, Map<String, Object>> transformMap = new HashMap<>();
     Map<String, Map<String, Object>> sinkMap = new HashMap<>();
@@ -124,8 +124,8 @@ public class EtlPipelineService {
   }
 
 
-  public EtlPipeline getById(String id) {
-    Optional<EtlPipeline> optionalEtlPipeline = repository.findById(id);
+  public Pipeline getById(String id) {
+    Optional<Pipeline> optionalEtlPipeline = repository.findById(id);
     if (optionalEtlPipeline.isEmpty()) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND,
         "Etl pipeline not found.");
@@ -134,7 +134,7 @@ public class EtlPipelineService {
     return optionalEtlPipeline.get();
   }
 
-  public Page<EtlPipeline> getAll(Pageable pageable) {
+  public Page<Pipeline> getAll(Pageable pageable) {
     return repository.findAll(pageable);
   }
 
@@ -143,8 +143,8 @@ public class EtlPipelineService {
     return "Successfully delete ETL pipeline with id:%s".formatted(id);
   }
 
-  public EtlPipelineProjection getEtlPipelineProjection(String id) {
-    EtlPipelineProjection etlPipeline = etlPipelineRepository.findProjectedById(id);
+  public PipelineProjection getEtlPipelineProjection(String id) {
+    PipelineProjection etlPipeline = pipelineRepository.findProjectedById(id);
     if (ObjectUtils.isEmpty(etlPipeline)) {
       throw new ResponseStatusException(HttpStatus.NOT_FOUND,
         "Etl pipeline not found.");

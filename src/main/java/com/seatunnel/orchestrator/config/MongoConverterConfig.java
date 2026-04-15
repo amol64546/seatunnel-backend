@@ -13,12 +13,12 @@ public class MongoConverterConfig {
   @Bean
   public MongoCustomConversions customConversions() {
     return new MongoCustomConversions(Arrays.asList(
-      new EtlBrickReadingConverter(),
-      new EtlBrickWritingConverter(),
-      new EtlNodeReadingConverter(),
-      new EtlNodeWritingConverter(),
-      new EtlConfigWritingConverter(),
-      new EtlConfigReadingConverter()
+      new ConnectrReadingConverter(),
+      new ConnectorWritingConverter(),
+      new NodeReadingConverter(),
+      new NodeWritingConverter(),
+      new JobConfigWritingConverter(),
+      new JobConfigReadingConverter()
     ));
   }
 }

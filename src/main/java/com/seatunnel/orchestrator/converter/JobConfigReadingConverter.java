@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @ReadingConverter
-public class EtlConfigReadingConverter implements Converter<Document, Map<String, Object>> {
+public class JobConfigReadingConverter implements Converter<Document, Map<String, Object>> {
 
   @Override
   public Map<String, Object> convert(Document source) {

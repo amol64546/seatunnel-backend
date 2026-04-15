@@ -1,6 +1,6 @@
 package com.seatunnel.orchestrator.converter;
 
-import com.seatunnel.orchestrator.model.EtlBrick;
+import com.seatunnel.orchestrator.model.Connector;
 import com.seatunnel.orchestrator.util.MapKeyConverter;
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -8,10 +8,10 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.data.convert.WritingConverter;
 
 @WritingConverter
-public class EtlBrickWritingConverter implements Converter<EtlBrick, Document> {
+public class ConnectorWritingConverter implements Converter<Connector, Document> {
 
   @Override
-  public Document convert(EtlBrick source) {
+  public Document convert(Connector source) {
     Document doc = new Document();
 
     if (source.getId() != null) {

@@ -2,7 +2,7 @@ package com.seatunnel.orchestrator.projection;
 
 import java.util.Date;
 
-public interface EtlPipelineProjection {
+public interface PipelineProjection {
 
   String getId();
 

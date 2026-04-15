@@ -8,7 +8,7 @@ import org.springframework.data.convert.WritingConverter;
 import java.util.Map;
 
 @WritingConverter
-public class EtlConfigWritingConverter implements Converter<Map<String, Object>, Document> {
+public class JobConfigWritingConverter implements Converter<Map<String, Object>, Document> {
 
   @Override
   public Document convert(Map<String, Object> source) {
