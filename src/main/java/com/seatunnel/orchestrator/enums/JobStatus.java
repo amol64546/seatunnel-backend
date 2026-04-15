@@ -1,8 +1,5 @@
 
-/*
- * Gaian Copyright
- * Copyright (C) : Gaian Solutions Ltd
- */
+
 package com.seatunnel.orchestrator.enums;
 
 import com.fasterxml.jackson.annotation.JsonValue;
