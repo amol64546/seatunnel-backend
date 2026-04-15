@@ -9,7 +9,7 @@ import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
 import com.seatunnel.orchestrator.model.*;
-import com.seatunnel.orchestrator.repository.JobRepo;
+import com.seatunnel.orchestrator.repository.JobRepository;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import com.seatunnel.orchestrator.validator.PipelineValidator;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +42,7 @@ public class JobService {
   private final OrchestrationProperties properties;
   private final ObjectMapper objectMapper;
   private final CommonUtil commonUtil;
-  private final JobRepo jobRepo;
+  private final JobRepository jobRepository;
   private final PipelineService pipelineService;
   private final WebClient webClient;
   private final static Set<String> CDC_SOURCE_PLUGINS = Set.of(
@@ -133,7 +133,7 @@ public class JobService {
       .jobInstance(instance)
       .build();
 
-    jobRepo.save(job);
+    jobRepository.save(job);
 
     return job;
   }
@@ -175,7 +175,7 @@ public class JobService {
   }
 
   private Job validateJobExists(String jobId) {
-    Job job = jobRepo.findEtlJobByJobId(jobId);
+    Job job = jobRepository.findEtlJobByJobId(jobId);
     if (ObjectUtils.isEmpty(job)) {
       throw new ApiException(HttpStatus.NOT_FOUND,
         "Job with id:%s not found".formatted(jobId));
@@ -205,7 +205,7 @@ public class JobService {
 
     job.setJobStatus(com.seatunnel.orchestrator.enums.JobStatus.CANCELED);
     job.setStoppedWithSavePoint(isStopWithSavePoint);
-    jobRepo.save(job);
+    jobRepository.save(job);
 
     return Map.of("msg", String.format("Job cancelled with jobId : %s", jobId));
   }
@@ -219,7 +219,7 @@ public class JobService {
       return;
     }
 
-    Job job = jobRepo.findEtlJobByJobId(jobId);
+    Job job = jobRepository.findEtlJobByJobId(jobId);
     if (ObjectUtils.isEmpty(job)) {
       log.warn("EtlJob not found in the db.");
       return;
@@ -249,7 +249,7 @@ public class JobService {
     jobDetails.setCompletionTimeSec(diffInSeconds);
     jobDetails.setId(job.getId());
 
-    jobRepo.save(jobDetails);
+    jobRepository.save(jobDetails);
 
   }
 
