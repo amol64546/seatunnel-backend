@@ -9,4 +9,6 @@ public interface PipelineProjection {
   String getName();
 
   Date getCreatedOn();
+
+  Date getUpdatedOn();
 }

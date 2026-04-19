@@ -2,6 +2,8 @@ package com.seatunnel.orchestrator.repository;
 
 import com.seatunnel.orchestrator.model.Connector;
 import com.seatunnel.orchestrator.projection.ConnectorProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.List;
@@ -13,5 +15,7 @@ public interface ConnectorRepository extends MongoRepository<Connector, String> 
   ConnectorProjection findProjectedById(String id);
 
   Connector findEtlBrickById(String id);
+
+  Page<ConnectorProjection> findAllProjectedBy(Pageable pageable);
 
 }

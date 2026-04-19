@@ -2,6 +2,7 @@ package com.seatunnel.orchestrator.service;
 
 import com.seatunnel.orchestrator.annotations.ConnectorValidation;
 import com.seatunnel.orchestrator.model.Connector;
+import com.seatunnel.orchestrator.projection.ConnectorProjection;
 import com.seatunnel.orchestrator.repository.ConnectorRepository;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import lombok.RequiredArgsConstructor;
@@ -37,8 +38,8 @@ public class ConnectorService {
     return etlBrickOptional.get();
   }
 
-  public Page<Connector> getAll(Pageable pageable) {
-    return repository.findAll(pageable);
+  public Page<ConnectorProjection> getAll(Pageable pageable) {
+    return repository.findAllProjectedBy(pageable);
   }
 
   public Connector update(String id, Connector brick) {

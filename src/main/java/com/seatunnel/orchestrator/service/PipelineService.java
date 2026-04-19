@@ -1,10 +1,10 @@
 package com.seatunnel.orchestrator.service;
 
 import com.seatunnel.orchestrator.enums.PluginType;
-import com.seatunnel.orchestrator.model.Edge;
 import com.seatunnel.orchestrator.model.Connector;
-import com.seatunnel.orchestrator.model.Pipeline;
+import com.seatunnel.orchestrator.model.Edge;
 import com.seatunnel.orchestrator.model.Node;
+import com.seatunnel.orchestrator.model.Pipeline;
 import com.seatunnel.orchestrator.projection.PipelineProjection;
 import com.seatunnel.orchestrator.repository.ConnectorRepository;
 import com.seatunnel.orchestrator.repository.PipelineRepository;
@@ -102,7 +102,7 @@ public class PipelineService {
     Map<String, Object> targetConfig = targetMap.get(edge.getTarget());
 
     String commonId = (String) sourceConfig.get(PLUGIN_OUTPUT);
-    if(StringUtils.isBlank(commonId)) {
+    if (StringUtils.isBlank(commonId)) {
       commonId = UUID.randomUUID().toString().replaceAll("-", "");
     }
 
@@ -134,8 +134,8 @@ public class PipelineService {
     return optionalEtlPipeline.get();
   }
 
-  public Page<Pipeline> getAll(Pageable pageable) {
-    return repository.findAll(pageable);
+  public Page<PipelineProjection> getAll(Pageable pageable) {
+    return repository.findAllProjectedBy(pageable);
   }
 
   public String delete(String id) {

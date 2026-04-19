@@ -1,6 +1,7 @@
 package com.seatunnel.orchestrator.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.seatunnel.orchestrator.enums.JobStatus;
 import com.seatunnel.orchestrator.model.JobOverview;
 import com.seatunnel.orchestrator.model.Job;
 import com.seatunnel.orchestrator.service.JobService;
@@ -22,21 +23,6 @@ public class JobController {
 
   private final JobService jobService;
 
-  @GetMapping(value = "/{jobId}", produces = {"application/json"})
-  public ResponseEntity<Job> getJobsById(@PathVariable String jobId) {
-    return ResponseEntity.ok().body(jobService.getJobsById(jobId));
-  }
-
-  @GetMapping(produces = {"application/json"})
-  public ResponseEntity<Object> getJobsByStatus(@RequestParam com.seatunnel.orchestrator.enums.JobStatus status) {
-    return ResponseEntity.ok().body(jobService.getJobsByStatus(status));
-  }
-
-  @GetMapping(value = "/overview", produces = {"application/json"})
-  public ResponseEntity<JobOverview> getJobsOverview() {
-    return ResponseEntity.ok().body(jobService.getJobsOverview());
-  }
-
   @PostMapping(value = "/stop/{jobId}", produces = {"application/json"})
   public ResponseEntity<Map<String, String>> stopJob(@PathVariable String jobId,
                                                      @RequestParam(required = false) boolean isStopWithSavePoint) {
@@ -45,9 +31,26 @@ public class JobController {
     return ResponseEntity.ok(jobService.stopJob(jobId, isStopWithSavePoint));
   }
 
-  @GetMapping(value = "/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  public Flux<String> streamJobStatus(@PathVariable String id) {
-    return jobService.streamJobStatus(id);
+  @GetMapping(value = "/{jobId}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Job> getJobsById(
+    @PathVariable String jobId) {
+    return ResponseEntity.ok().body(jobService.getJobsById(jobId));
+  }
+
+  @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<Object> getJobsByStatus(
+    @RequestParam JobStatus status) {
+    return ResponseEntity.ok().body(jobService.getJobsByStatus(status));
+  }
+
+  @GetMapping(value = "/overview", produces = MediaType.APPLICATION_JSON_VALUE)
+  public ResponseEntity<JobOverview> getJobsOverview() {
+    return ResponseEntity.ok().body(jobService.getJobsOverview());
+  }
+
+  @GetMapping(value = "/status/{jobId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public Flux<String> streamJobStatus(@PathVariable String jobId) {
+    return jobService.streamJobStatus(jobId);
   }
 
   @Hidden
