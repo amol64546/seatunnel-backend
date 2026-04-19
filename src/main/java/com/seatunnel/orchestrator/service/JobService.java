@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.seatunnel.orchestrator.config.OrchestrationProperties;
 import com.seatunnel.orchestrator.enums.JobMode;
+import com.seatunnel.orchestrator.enums.JobStatus;
 import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.seatunnel.orchestrator.enums.JobStatus.*;
 import static com.seatunnel.orchestrator.util.Constants.*;
 
 @Service
@@ -111,7 +113,7 @@ public class JobService {
       .path("/submit-job")
       .queryParam("jobName", pipeline.getName());
 
-    if (ObjectUtils.isNotEmpty(jobId)) {
+    if (StringUtils.isNotEmpty(jobId)) {
       uriComponentsBuilder
         .queryParam(IS_START_WITH_SAVE_POINT, true)
         .queryParam(JOB_ID, jobId);
@@ -123,15 +125,20 @@ public class JobService {
       uriComponentsBuilder.toUriString(),
       null);
 
-    Job job = Job.builder()
-      .jobId(jsonNode.get(JOB_ID).asText())
-      .jobStatus(com.seatunnel.orchestrator.enums.JobStatus.SUBMITTED)
+    Job.JobBuilder jobBuilder = Job.builder()
+      .createTime(Date.from(java.time.Instant.now()))
       .jobName(pipeline.getName())
       .pipelineId(pipeline.getId())
-      .createTime(Date.from(java.time.Instant.now()))
-      .envOptions(env)
-      .jobInstance(instance)
-      .build();
+      .jobInstance(instance);
+
+    if (ObjectUtils.isNotEmpty(jsonNode.get(JOB_ID))) {
+      jobBuilder.jobStatus(JobStatus.RUNNING)
+        .jobId(jsonNode.get(JOB_ID).asText())
+        .id(jsonNode.get(JOB_ID).asText());
+    } else {
+      jobBuilder.jobStatus(JobStatus.SUBMITTED);
+    }
+    Job job = jobBuilder.build();
 
     jobRepository.save(job);
 
@@ -168,10 +175,16 @@ public class JobService {
     log.info("Fetching ETL job info for jobId: {}", jobId);
 
     Job job = validateJobExists(jobId);
-    if (!job.getJobStatus().equals(com.seatunnel.orchestrator.enums.JobStatus.SUBMITTED)) {
-      return job;
+    Job jobResponse = jobDetailsApiCall(jobId).block();
+    if (ObjectUtils.isNotEmpty(jobResponse)) {
+      jobResponse.setId(jobId);
+      jobResponse.setPipelineId(job.getPipelineId());
+      jobResponse.setJobName(job.getJobName());
+      jobResponse.setJobInstance(job.getJobInstance());
+      jobResponse.setCompletionTimeSec(calculateCompletionTime(jobResponse));
+      jobRepository.save(jobResponse);
     }
-    return job;
+    return jobResponse;
   }
 
   private Job validateJobExists(String jobId) {
@@ -187,7 +200,13 @@ public class JobService {
 
     Job job = validateJobExists(jobId);
 
-    if (!job.getJobStatus().equals(com.seatunnel.orchestrator.enums.JobStatus.RUNNING)) {
+    JobStatus status = jobDetailsApiCall(jobId).map(Job::getJobStatus)
+      .block();
+    if (ObjectUtils.isNotEmpty(status)) {
+      job.setJobStatus(status);
+    }
+
+    if (!job.getJobStatus().equals(JobStatus.RUNNING)) {
       throw new ApiException(HttpStatus.BAD_REQUEST,
         "Job with id:%s is not running, can not stop".formatted(jobId));
     }
@@ -203,7 +222,7 @@ public class JobService {
       properties.getEtlServiceUrl() + "/stop-job",
       null);
 
-    job.setJobStatus(com.seatunnel.orchestrator.enums.JobStatus.CANCELED);
+    job.setJobStatus(JobStatus.CANCELLED);
     job.setStoppedWithSavePoint(isStopWithSavePoint);
     jobRepository.save(job);
 
@@ -237,20 +256,24 @@ public class JobService {
     objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     jobDetails = objectMapper.convertValue(response, Job.class);
 
-    long diffInSeconds = -1L;
+    jobDetails.setCompletionTimeSec(calculateCompletionTime(jobDetails));
+    jobDetails.setId(job.getId());
+
+    jobRepository.save(jobDetails);
+
+  }
+
+  private static long calculateCompletionTime(Job jobDetails) {
+    long completionTime = -1L;
 
     if (ObjectUtils.isNotEmpty(jobDetails.getFinishTime())) {
       long diffInMillis =
         jobDetails.getFinishTime().getTime() - jobDetails.getCreateTime().getTime();
       // Convert milliseconds to seconds
-      diffInSeconds = diffInMillis / 1000;
+      completionTime = diffInMillis / 1000;
     }
 
-    jobDetails.setCompletionTimeSec(diffInSeconds);
-    jobDetails.setId(job.getId());
-
-    jobRepository.save(jobDetails);
-
+    return completionTime;
   }
 
   private static String getJobId(JsonNode event) {
@@ -265,22 +288,21 @@ public class JobService {
 
   }
 
-  public Flux<String> streamJobStatus(String jobId) {
+  public Flux<JobStatus> streamJobStatus(String jobId) {
     validateJobExists(jobId);
     return Flux.interval(Duration.ofSeconds(2))
-      .flatMap(tick -> pollStatus(jobId))
+      .flatMap(tick -> jobDetailsApiCall(jobId)
+        .map(Job::getJobStatus))
       .distinctUntilChanged() // Only send if status actually changes
-      .takeUntil(status -> List.of("FINISHED", "CANCELED", "FAILED").contains(status));
+      .takeUntil(status -> List.of(FINISHED, CANCELLED, FAILED).contains(status));
   }
 
-  public Mono<String> pollStatus(String jobId) {
+  public Mono<Job> jobDetailsApiCall(String jobId) {
     return webClient.get()
       .uri(properties.getEtlServiceUrl() + "/job-info/{id}", jobId)
       .accept(MediaType.APPLICATION_JSON)
       .retrieve()
-      .bodyToMono(JsonNode.class)
-      .map(json -> json.path("jobStatus").asText())
-      .onErrorResume(e -> Mono.just("ERROR")); // Handle downstream failures gracefully
+      .bodyToMono(Job.class); // Handle downstream failures gracefully
   }
 
   public JobOverview getJobsOverview() {

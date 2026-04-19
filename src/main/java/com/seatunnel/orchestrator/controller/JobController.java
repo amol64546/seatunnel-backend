@@ -49,7 +49,7 @@ public class JobController {
   }
 
   @GetMapping(value = "/status/{jobId}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-  public Flux<String> streamJobStatus(@PathVariable String jobId) {
+  public Flux<JobStatus> streamJobStatus(@PathVariable String jobId) {
     return jobService.streamJobStatus(jobId);
   }
 

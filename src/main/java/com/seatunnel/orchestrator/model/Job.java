@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import com.seatunnel.orchestrator.enums.JobStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -15,6 +16,7 @@ import lombok.experimental.SuperBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.io.Serializable;
@@ -37,6 +39,7 @@ public class Job implements Serializable {
   @JsonIgnore
   private String id;
 
+  @Indexed(unique = true)
   private String jobId;
 
   private String jobName;
@@ -49,13 +52,12 @@ public class Job implements Serializable {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
   private Date finishTime;
 
-  private Map<String, Object> envOptions;
-
-  private com.seatunnel.orchestrator.enums.JobStatus jobStatus;
+  private JobStatus jobStatus;
 
   private String errorMsg;
 
   private Map<String, Object> metrics;
+  private Map<String, Object> jobDag;
 
   // Extra field
   private String pipelineId;

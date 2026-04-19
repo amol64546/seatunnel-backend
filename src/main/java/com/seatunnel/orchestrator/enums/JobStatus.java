@@ -6,11 +6,12 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum JobStatus {
 
-  SUBMITTED("SUBMITTED"),
   RUNNING("RUNNING"),
   FINISHED("FINISHED"),
-  CANCELED("CANCELED"),
+  CANCELLED("CANCELLED"),
   FAILED("FAILED"),
+
+  SUBMITTED("SUBMITTED"),
   UNKNOWABLE("UNKNOWABLE");
 
   private final String value;
