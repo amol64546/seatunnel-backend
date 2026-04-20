@@ -295,11 +295,14 @@ public class JobService {
 
   }
 
-  public Flux<JobStatus> streamJobStatus(String jobId) {
+  public Flux<String> streamJobStatus(String jobId) {
     validateJobExists(jobId);
     return Flux.interval(Duration.ofSeconds(1))
       .flatMap(tick -> jobDetailsApiCall(jobId)
-        .map(Job::getJobStatus));
+        .map(Job::getJobStatus)
+        .map(JobStatus::name))
+      .distinctUntilChanged() // Only send if status actually changes
+      .takeUntil(status -> List.of("FINISHED", "CANCELED", "FAILED").contains(status));
   }
 
   public Mono<Job> jobDetailsApiCall(String jobId) {
