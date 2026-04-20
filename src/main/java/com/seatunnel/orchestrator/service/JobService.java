@@ -3,6 +3,7 @@ package com.seatunnel.orchestrator.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.seatunnel.orchestrator.annotations.ActionLog;
 import com.seatunnel.orchestrator.config.OrchestrationProperties;
 import com.seatunnel.orchestrator.enums.JobMode;
 import com.seatunnel.orchestrator.enums.JobStatus;
@@ -10,6 +11,7 @@ import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.enums.SourcePlugin;
 import com.seatunnel.orchestrator.exception.ApiException;
 import com.seatunnel.orchestrator.model.*;
+import com.seatunnel.orchestrator.projection.JobProjection;
 import com.seatunnel.orchestrator.repository.JobRepository;
 import com.seatunnel.orchestrator.util.CommonUtil;
 import com.seatunnel.orchestrator.validator.PipelineValidator;
@@ -58,7 +60,7 @@ public class JobService {
   );
   private final PipelineValidator pipelineValidator;
 
-
+  @ActionLog(operation = "Execute Pipeline")
   public Job executePipeline(String id, String jobId, Map<String, Object> env) {
     Pipeline pipeline = pipelineService.getById(id);
 
@@ -145,6 +147,7 @@ public class JobService {
     return job;
   }
 
+  @ActionLog(operation = "Get Job Details")
   private JobInstance getJobInstance(Pipeline pipeline) {
     JobInstance jobInstance = new JobInstance();
     // updating nodes config
@@ -155,6 +158,7 @@ public class JobService {
     return jobInstance;
   }
 
+  @ActionLog(operation = "Process Node")
   private void processNode(Node node, JobInstance jobInstance) {
 
     switch (node.getPluginType()) {
@@ -170,7 +174,7 @@ public class JobService {
     }
   }
 
-
+  @ActionLog(operation = "Get Job Details By Id")
   public Job getJobsById(String jobId) {
     log.info("Fetching ETL job info for jobId: {}", jobId);
 
@@ -187,6 +191,7 @@ public class JobService {
     return jobResponse;
   }
 
+  @ActionLog(operation = "Stop Job")
   private Job validateJobExists(String jobId) {
     Job job = jobRepository.findEtlJobByJobId(jobId);
     if (ObjectUtils.isEmpty(job)) {
@@ -196,6 +201,7 @@ public class JobService {
     return job;
   }
 
+  @ActionLog(operation = "Stop Job")
   public Map<String, String> stopJob(String jobId, boolean isStopWithSavePoint) {
 
     Job job = validateJobExists(jobId);
@@ -222,13 +228,12 @@ public class JobService {
       properties.getEtlServiceUrl() + "/stop-job",
       null);
 
-    job.setJobStatus(JobStatus.CANCELLED);
+    job.setJobStatus(JobStatus.CANCELED);
     job.setStoppedWithSavePoint(isStopWithSavePoint);
     jobRepository.save(job);
 
     return Map.of("msg", String.format("Job cancelled with jobId : %s", jobId));
   }
-
 
   public void callback(JsonNode event) {
 
@@ -263,6 +268,7 @@ public class JobService {
 
   }
 
+  @ActionLog(operation = "Calculate Job Completion Time")
   private static long calculateCompletionTime(Job jobDetails) {
     long completionTime = -1L;
 
@@ -276,6 +282,7 @@ public class JobService {
     return completionTime;
   }
 
+  @ActionLog(operation = "Extract Job Id From Callback Event")
   private static String getJobId(JsonNode event) {
     // Access the first element in the array
     JsonNode firstElement = event.get(0);
@@ -290,11 +297,9 @@ public class JobService {
 
   public Flux<JobStatus> streamJobStatus(String jobId) {
     validateJobExists(jobId);
-    return Flux.interval(Duration.ofSeconds(2))
+    return Flux.interval(Duration.ofSeconds(1))
       .flatMap(tick -> jobDetailsApiCall(jobId)
-        .map(Job::getJobStatus))
-      .distinctUntilChanged() // Only send if status actually changes
-      .takeUntil(status -> List.of(FINISHED, CANCELLED, FAILED).contains(status));
+        .map(Job::getJobStatus));
   }
 
   public Mono<Job> jobDetailsApiCall(String jobId) {
@@ -302,7 +307,7 @@ public class JobService {
       .uri(properties.getEtlServiceUrl() + "/job-info/{id}", jobId)
       .accept(MediaType.APPLICATION_JSON)
       .retrieve()
-      .bodyToMono(Job.class); // Handle downstream failures gracefully
+      .bodyToMono(Job.class);
   }
 
   public JobOverview getJobsOverview() {
@@ -319,23 +324,27 @@ public class JobService {
     );
   }
 
-  public Object getJobsByStatus(com.seatunnel.orchestrator.enums.JobStatus status) {
+  public List<JobProjection> getJobsByStatus(JobStatus status) {
     log.info("Fetching ETL jobs with status: {}", status);
 
     String url = properties.getEtlServiceUrl();
-    if (ObjectUtils.isEmpty(status)) {
-      url += "/finished-jobs";
-    } else if (status.equals(com.seatunnel.orchestrator.enums.JobStatus.RUNNING)) {
+    if (status.equals(JobStatus.RUNNING)) {
       url += "/running-jobs";
     } else {
       url += "/finished-jobs/" + status;
     }
     log.info("Constructed URL for fetching ETL jobs: {}", url);
-    return commonUtil.restClient(
+    JsonNode jsonNode = commonUtil.restClient(
       null,
       HttpMethod.GET,
       url,
       null);
+
+    return objectMapper.convertValue(
+      jsonNode,
+      objectMapper.getTypeFactory().constructCollectionType(List.class, JobProjection.class)
+    );
+
   }
 
 }

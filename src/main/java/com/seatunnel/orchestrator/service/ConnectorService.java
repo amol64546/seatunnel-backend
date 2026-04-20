@@ -1,5 +1,6 @@
 package com.seatunnel.orchestrator.service;
 
+import com.seatunnel.orchestrator.annotations.ActionLog;
 import com.seatunnel.orchestrator.annotations.ConnectorValidation;
 import com.seatunnel.orchestrator.model.Connector;
 import com.seatunnel.orchestrator.projection.ConnectorProjection;
@@ -24,11 +25,13 @@ public class ConnectorService {
   private final CommonUtil commonUtil;
 
   @ConnectorValidation
+  @ActionLog(operation = "Create Connector")
   public Connector create(Connector request) {
     commonUtil.validateMethodArguments(request);
     return repository.save(request);
   }
 
+  @ActionLog(operation = "Get Connector By Id")
   public Connector getById(String id) {
     Optional<Connector> etlBrickOptional = repository.findById(id);
     if (etlBrickOptional.isEmpty()) {
@@ -42,6 +45,7 @@ public class ConnectorService {
     return repository.findAllProjectedBy(pageable);
   }
 
+  @ActionLog(operation = "Update Connector")
   public Connector update(String id, Connector brick) {
     Connector existingBrick = getById(id);
     brick.setId(id);
@@ -49,6 +53,7 @@ public class ConnectorService {
     return create(brick);
   }
 
+  @ActionLog(operation = "Delete Connector")
   public String delete(String id) {
     repository.deleteById(id);
     return "Successfully delete connector with id:%s".formatted(id);

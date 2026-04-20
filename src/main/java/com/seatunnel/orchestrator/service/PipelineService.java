@@ -1,5 +1,6 @@
 package com.seatunnel.orchestrator.service;
 
+import com.seatunnel.orchestrator.annotations.ActionLog;
 import com.seatunnel.orchestrator.enums.PluginType;
 import com.seatunnel.orchestrator.model.Connector;
 import com.seatunnel.orchestrator.model.Edge;
@@ -33,6 +34,7 @@ public class PipelineService {
   private final ConnectorRepository connectorRepository;
   private final PipelineRepository pipelineRepository;
 
+  @ActionLog(operation = "Create/Update Pipeline")
   public Pipeline create(Pipeline pipeline) {
 
     // if id is present, it means update operation, otherwise create operation
@@ -54,6 +56,7 @@ public class PipelineService {
     return repository.save(pipeline);
   }
 
+  @ActionLog(operation = "Connect Nodes")
   private void connectNodes(Pipeline pipeline) {
     Map<String, Map<String, Object>> sourceMap = new HashMap<>();
     Map<String, Map<String, Object>> transformMap = new HashMap<>();
@@ -96,6 +99,7 @@ public class PipelineService {
     );
   }
 
+  @ActionLog(operation = "Connect Source To Target")
   private void connectSourceToTarget(Edge edge, Map<String, Map<String, Object>> sourceMap,
                                      Map<String, Map<String, Object>> targetMap) {
     Map<String, Object> sourceConfig = sourceMap.get(edge.getSource());
@@ -109,7 +113,7 @@ public class PipelineService {
     // if plugin_input already exists,
     // it means this target node has multiple source nodes,
     // we need to append the new source node to the existing plugin_input list
-    List<String> pluginInput = new ArrayList<>();
+    Set<String> pluginInput = new HashSet<>();
     Object raw = targetConfig.get(PLUGIN_INPUT);
     if (raw instanceof List<?> list) {
       for (Object e : list) {
@@ -124,6 +128,7 @@ public class PipelineService {
   }
 
 
+  @ActionLog(operation = "Get Pipeline By Id")
   public Pipeline getById(String id) {
     Optional<Pipeline> optionalEtlPipeline = repository.findById(id);
     if (optionalEtlPipeline.isEmpty()) {
@@ -138,11 +143,13 @@ public class PipelineService {
     return repository.findAllProjectedBy(pageable);
   }
 
+  @ActionLog(operation = "Delete Pipeline")
   public String delete(String id) {
     repository.deleteById(id);
     return "Successfully delete ETL pipeline with id:%s".formatted(id);
   }
 
+  @ActionLog(operation = "Get Pipeline Projection By Id")
   public PipelineProjection getEtlPipelineProjection(String id) {
     PipelineProjection etlPipeline = pipelineRepository.findProjectedById(id);
     if (ObjectUtils.isEmpty(etlPipeline)) {

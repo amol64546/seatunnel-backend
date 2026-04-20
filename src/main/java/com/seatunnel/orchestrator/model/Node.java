@@ -43,9 +43,6 @@ public class Node implements Serializable {
   @Builder.Default
   private Map<String, Object> config = new HashMap<>();
 
-  @Builder.Default
-  private Map<String, Object> metadata = new HashMap<>();
-
   @JsonSetter("config")
   public void bindConfig(Map<String, Object> config) {
     if (config != null) {

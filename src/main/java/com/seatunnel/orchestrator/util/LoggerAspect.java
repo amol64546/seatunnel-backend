@@ -48,7 +48,7 @@ public class LoggerAspect {
       );
 
       record(
-        actionLog.operator(),
+        actionLog.operation(),
         inputs,
         Map.of("return", output),
         meta
@@ -57,5 +57,9 @@ public class LoggerAspect {
   }
 
   private void record(String operator, Map<String, Object> inputs, Map<String, Object> aReturn, Map<String, Object> meta) {
+    log.info("Operation: {}", operator);
+    log.info("Inputs: {}", inputs);
+    log.info("Return: {}", aReturn);
+    log.info("Meta: {}", meta);
   }
 }

@@ -8,11 +8,10 @@ public enum JobStatus {
 
   RUNNING("RUNNING"),
   FINISHED("FINISHED"),
-  CANCELLED("CANCELLED"),
+  CANCELED("CANCELED"),
   FAILED("FAILED"),
 
-  SUBMITTED("SUBMITTED"),
-  UNKNOWABLE("UNKNOWABLE");
+  SUBMITTED("SUBMITTED");
 
   private final String value;
 

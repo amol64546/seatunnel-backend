@@ -47,8 +47,8 @@ public class CommonUtil {
     return httpHeaders;
   }
 
-  public JsonNode restClient(Object requestBody,
-                             HttpMethod httpMethod, String url, HttpHeaders httpHeaders) {
+  public JsonNode restClient(Object requestBody, HttpMethod httpMethod, String url,
+                             HttpHeaders httpHeaders) {
     log.info("------- Making rest call to url: {}, method: {} --------", url, httpMethod);
     if (httpHeaders == null) {
       httpHeaders = buildHttpHeaders();
