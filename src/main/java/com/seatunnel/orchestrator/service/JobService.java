@@ -124,8 +124,7 @@ public class JobService {
     JsonNode jsonNode = commonUtil.restClient(
       instance,
       HttpMethod.POST,
-      uriComponentsBuilder.toUriString(),
-      null);
+      uriComponentsBuilder.toUriString());
 
     Job.JobBuilder jobBuilder = Job.builder()
       .createTime(Date.from(java.time.Instant.now()))
@@ -225,8 +224,7 @@ public class JobService {
     commonUtil.restClient(
       requestBody,
       HttpMethod.POST,
-      properties.getEtlServiceUrl() + "/stop-job",
-      null);
+      properties.getEtlServiceUrl() + "/stop-job");
 
     job.setJobStatus(JobStatus.CANCELED);
     job.setStoppedWithSavePoint(isStopWithSavePoint);
@@ -252,8 +250,7 @@ public class JobService {
     JsonNode response = commonUtil.restClient(
       null,
       HttpMethod.GET,
-      properties.getEtlServiceUrl() + "/job-info/" + jobId,
-      null);
+      properties.getEtlServiceUrl() + "/job-info/" + jobId);
 
     log.info("Etl Job info response: {}", response);
 
@@ -318,8 +315,7 @@ public class JobService {
     JsonNode response = commonUtil.restClient(
       null,
       HttpMethod.GET,
-      properties.getEtlServiceUrl() + "/overview",
-      null);
+      properties.getEtlServiceUrl() + "/overview");
 
     return objectMapper.convertValue(
       response,
@@ -340,8 +336,7 @@ public class JobService {
     JsonNode jsonNode = commonUtil.restClient(
       null,
       HttpMethod.GET,
-      url,
-      null);
+      url);
 
     return objectMapper.convertValue(
       jsonNode,
