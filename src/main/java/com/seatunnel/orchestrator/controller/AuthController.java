@@ -1,5 +1,6 @@
 package com.seatunnel.orchestrator.controller;
 
+import com.seatunnel.orchestrator.config.OrchestrationProperties;
 import com.seatunnel.orchestrator.dto.LoginRequest;
 import com.seatunnel.orchestrator.dto.LoginResponse;
 import com.seatunnel.orchestrator.util.JwtUtil;
@@ -14,11 +15,13 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
   private final JwtUtil jwtUtil;
+  private final OrchestrationProperties properties;
 
   @PostMapping("/login")
   public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
     // Authenticate user (replace with real authentication)
-    if ("admin".equals(request.getUsername()) && "admin".equals(request.getPassword())) {
+    if (properties.getUsername().equals(request.getUsername())
+      && properties.getPassword().equals(request.getPassword())) {
       String token = jwtUtil.generateToken(request.getUsername());
       String refreshToken = jwtUtil.generateRefreshToken(request.getUsername());
       long expiresIn = 60 * 60; // 1 hour in seconds
