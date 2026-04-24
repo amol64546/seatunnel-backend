@@ -14,8 +14,10 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Optional;
 
+import static org.springframework.core.Ordered.HIGHEST_PRECEDENCE;
+
 @Configuration
-@Order
+@Order(HIGHEST_PRECEDENCE)
 @Slf4j
 public class CustomCorsFilter extends OncePerRequestFilter {
 
