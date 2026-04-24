@@ -11,9 +11,19 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class RestTemplateConfig {
 
+  private final OrchestrationProperties orchestrationProperties;
+
   @Bean
   public RestTemplate restTemplate() {
-    log.info("--------bobRestTemplate bean created successfully for master profile-------");
-    return new RestTemplate();
+    log.info("--------RestTemplate bean created successfully for master profile-------");
+    RestTemplate restTemplate = new RestTemplate();
+    restTemplate.getInterceptors().add((request, body, execution) -> {
+      request.getHeaders().setBasicAuth(
+        orchestrationProperties.getEtlServiceUsername(),
+        orchestrationProperties.getEtlServicePassword()
+      );
+      return execution.execute(request, body);
+    });
+    return restTemplate;
   }
 }

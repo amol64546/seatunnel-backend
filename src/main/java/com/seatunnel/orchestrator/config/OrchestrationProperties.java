@@ -13,5 +13,8 @@ public class OrchestrationProperties {
     private String etlServiceUrl;
     private String etlServiceUsername;
     private String etlServicePassword;
+    private String username;
+    private String password;
+    private String jwtSecret;
 
 }

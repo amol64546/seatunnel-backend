@@ -40,19 +40,9 @@ public class CommonUtil {
     }
   }
 
-  private HttpHeaders buildHttpHeaders() {
-    HttpHeaders httpHeaders = new HttpHeaders();
-    httpHeaders.setBasicAuth(orchestrationProperties.getEtlServiceUsername(),
-      orchestrationProperties.getEtlServicePassword());
-    return httpHeaders;
-  }
-
-  public JsonNode restClient(Object requestBody, HttpMethod httpMethod, String url,
-                             HttpHeaders httpHeaders) {
+  public JsonNode restClient(Object requestBody, HttpMethod httpMethod, String url) {
     log.info("------- Making rest call to url: {}, method: {} --------", url, httpMethod);
-    if (httpHeaders == null) {
-      httpHeaders = buildHttpHeaders();
-    }
+    HttpHeaders httpHeaders = new HttpHeaders();
     httpHeaders.add("Content-Type", "application/json");
     HttpEntity<Object> requestEntity = new HttpEntity<>(requestBody, httpHeaders);
     try {
