@@ -26,22 +26,42 @@ jobs:
       - name: Pull freshly built Docker image
         run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}
 
-      - name: Run Trivy Vulnerability Scanner
+      # ==========================================
+      # RUN 1: Generate the Downloadable HTML Report
+      # ==========================================
+      - name: Run Trivy Scanner (HTML Format)
         uses: aquasecurity/trivy-action@master
         with:
-          # Points to the exact image your first pipeline just pushed
           image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}'
-
-          # Prints the results nicely in the GitHub Actions console
-          format: 'table'
-
-          # Maps directly to your --scanners argument
+          format: 'template'
+          template: '@/contrib/html.tpl'
+          output: 'trivy-report.html'
           scanners: 'vuln,misconfig,secret,license'
-
-          # Set to '1' if you want the pipeline to FAIL when it finds issues.
-          # Set to '0' to just print the report and pass.
           exit-code: '0'
-
         env:
-          # Maps directly to your --image-config-scanners argument
           TRIVY_IMAGE_CONFIG_SCANNERS: 'misconfig,secret'
+
+      - name: Upload Trivy HTML Report as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Trivy_Security_Report
+          path: trivy-report.html
+
+      # ==========================================
+      # RUN 2: Generate the SARIF file for GitHub UI
+      # ==========================================
+      - name: Run Trivy Scanner (SARIF Format)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          scanners: 'vuln,misconfig,secret,license'
+          exit-code: '0'
+        env:
+          TRIVY_IMAGE_CONFIG_SCANNERS: 'misconfig,secret'
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
