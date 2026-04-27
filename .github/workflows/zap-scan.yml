@@ -44,7 +44,7 @@
 #          target: 'http://localhost:8080'
 #          token: ${{ secrets.GITHUB_TOKEN }}
 #          # Must be false, otherwise the pipeline stops here if an issue is found
-#          fail_action: true
+#          fail_action: false
 #
 #      # ==========================================
 #      # 2. ZAP API SCAN (Active attack against Swagger/OpenAPI spec)
@@ -57,7 +57,7 @@
 #          token: ${{ secrets.GITHUB_TOKEN }}
 #          cmd_options: '-a'
 #          # Must be false so the Full Scan still runs
-#          fail_action: true
+#          fail_action: false
 #
 #      # ==========================================
 #      # 3. ZAP FULL SCAN (Active attack against everything)
