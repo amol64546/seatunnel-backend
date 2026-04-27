@@ -1,32 +1,44 @@
-name: ZAP Baseline Scan
+name: ZAP Security Scan
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  # This triggers the scan immediately after the Build pipeline finishes
+  workflow_run:
+    workflows: ["Build and Deploy Docker Image"]
+    types:
+      - completed
 
 jobs:
-  security_scan:
+  security-scan:
+    # This ensures we only run ZAP if the image successfully built and pushed
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      # NOTE: If your app isn't publicly hosted, you must add steps here 
-      # to build and start your application locally (e.g., docker-compose up -d)
+    # Required permissions to allow ZAP to open GitHub Issues
+    permissions:
+      issues: write
+      contents: read
+
+    steps:
+      - name: Log in to DockerHub (To avoid rate limits or pull private images)
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull freshly built Docker image
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:1.0.0
+
+      - name: Start container locally for ZAP scan
+        run: docker run -d -p 8080:8080 --name orchestrator-app ${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:1.0.0
+
+      - name: Wait for application to boot
+        run: sleep 20
 
       - name: Run ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.15.0
         with:
-          # Replace with your app's staging URL or localhost URL
-          target: 'https://your-staging-environment.com' 
-          
-          # Allows ZAP to automatically create/update GitHub Issues with its findings
+          target: 'http://localhost:8080'
           token: ${{ secrets.GITHUB_TOKEN }}
-          
-          # Set to true if you want the pipeline to fail when vulnerabilities are found
-          fail_action: false 
-          
-          # Optional: Exclude certain false positives via a rules file
-          # rules_file_name: '.zap/rules.tsv'
+          # Leaves it false so the pipeline completes even if vulnerabilities are found,
+          # relying on GitHub Issues for reporting instead.
+          fail_action: false
