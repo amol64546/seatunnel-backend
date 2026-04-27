@@ -1,0 +1,72 @@
+#name: ZAP Security Scan
+#
+#on:
+#  # This triggers the scan immediately after the Build pipeline finishes
+#  workflow_run:
+#    workflows: ["Build and Deploy Docker Image"]
+#    types:
+#      - completed
+#
+#jobs:
+#  security-scan:
+#    # This ensures we only run ZAP if the image successfully built and pushed
+#    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+#    runs-on: ubuntu-latest
+#    environment: production
+#
+#    # Required permissions to allow ZAP to open GitHub Issues
+#    permissions:
+#      issues: write
+#      contents: read
+#
+#    steps:
+#      - name: Log in to DockerHub (To avoid rate limits or pull private images)
+#        uses: docker/login-action@v3
+#        with:
+#          username: ${{ secrets.DOCKERHUB_USERNAME }}
+#          password: ${{ secrets.DOCKERHUB_TOKEN }}
+#
+#      - name: Pull freshly built Docker image
+#        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}
+#
+#      - name: Start container locally for ZAP scan
+#        run: docker run -d -p 8080:8080 --name orchestrator-app ${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}
+#
+#      - name: Wait for application to boot
+#        run: sleep 20
+#
+#      # ==========================================
+#      # 1. ZAP BASELINE SCAN (Passive checking)
+#      # ==========================================
+#      - name: Run ZAP Baseline Scan
+#        uses: zaproxy/action-baseline@v0.15.0
+#        with:
+#          target: 'http://localhost:8080'
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          # Must be false, otherwise the pipeline stops here if an issue is found
+#          fail_action: true
+#
+#      # ==========================================
+#      # 2. ZAP API SCAN (Active attack against Swagger/OpenAPI spec)
+#      # ==========================================
+#      - name: Run ZAP API Scan
+#        uses: zaproxy/action-api-scan@v0.10.0
+#        with:
+#          target: 'http://localhost:8080/v3/api-docs' # Adjust if your OpenAPI JSON is at a different path
+#          format: openapi
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          cmd_options: '-a'
+#          # Must be false so the Full Scan still runs
+#          fail_action: true
+#
+#      # ==========================================
+#      # 3. ZAP FULL SCAN (Active attack against everything)
+#      # ==========================================
+#      - name: Run ZAP Full Scan
+#        uses: zaproxy/action-full-scan@v0.13.0
+#        with:
+#          target: 'http://localhost:8080'
+#          token: ${{ secrets.GITHUB_TOKEN }}
+#          cmd_options: '-a'
+#          # Set to true to fail the pipeline if vulnerabilities are found in this final step
+#          fail_action: true

@@ -1,0 +1,47 @@
+name: Trivy Container Scan
+
+on:
+  # Triggers immediately after your build pipeline finishes
+  workflow_run:
+    workflows: ["Build and Deploy Docker Image"]
+    types:
+      - completed
+
+jobs:
+  trivy-scan:
+    # Only run if the image successfully built and pushed
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    # REQUIRED: So the job can access your DockerHub secrets
+    environment: production
+
+    steps:
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Pull freshly built Docker image
+        run: docker pull ${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          # Points to the exact image your first pipeline just pushed
+          image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}'
+
+          # Prints the results nicely in the GitHub Actions console
+          format: 'table'
+
+          # Maps directly to your --scanners argument
+          scanners: 'vuln,misconfig,secret,license'
+
+          # Set to '1' if you want the pipeline to FAIL when it finds issues.
+          # Set to '0' to just print the report and pass.
+          exit-code: '0'
+
+        env:
+          # Maps directly to your --image-config-scanners argument
+          TRIVY_IMAGE_CONFIG_SCANNERS: 'misconfig,secret'
