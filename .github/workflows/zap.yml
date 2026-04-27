@@ -1,0 +1,32 @@
+name: ZAP Baseline Scan
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  security_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # NOTE: If your app isn't publicly hosted, you must add steps here 
+      # to build and start your application locally (e.g., docker-compose up -d)
+
+      - name: Run ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.15.0
+        with:
+          # Replace with your app's staging URL or localhost URL
+          target: 'https://your-staging-environment.com' 
+          
+          # Allows ZAP to automatically create/update GitHub Issues with its findings
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Set to true if you want the pipeline to fail when vulnerabilities are found
+          fail_action: false 
+          
+          # Optional: Exclude certain false positives via a rules file
+          # rules_file_name: '.zap/rules.tsv'
