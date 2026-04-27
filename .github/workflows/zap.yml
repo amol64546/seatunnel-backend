@@ -12,6 +12,7 @@ jobs:
     # This ensures we only run ZAP if the image successfully built and pushed
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    environment: production
 
     # Required permissions to allow ZAP to open GitHub Issues
     permissions:
