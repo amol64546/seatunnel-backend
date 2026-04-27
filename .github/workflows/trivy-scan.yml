@@ -34,7 +34,7 @@ jobs:
         with:
           image-ref: '${{ secrets.DOCKERHUB_USERNAME }}/seatunnel-orchestrator:${{ github.event.workflow_run.head_sha }}'
           format: 'template'
-          template: '@html.tpl'
+          template: '@${{ github.workspace }}/html.tpl'
           output: 'trivy-report.html'
           scanners: 'vuln,misconfig,secret,license'
           # Set to '1' if you want the pipeline to FAIL when it finds issues.
