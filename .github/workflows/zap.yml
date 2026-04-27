@@ -42,4 +42,4 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           # Leaves it false so the pipeline completes even if vulnerabilities are found,
           # relying on GitHub Issues for reporting instead.
-          fail_action: false
+          fail_action: true
